@@ -3,7 +3,13 @@ package moe.brianhsu.maidroidtask.usecase
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.scalatest._
 import org.scalatest.matchers.should.Matchers._
+import scala.language.reflectiveCalls
 
+class DoNothingUseCase extends UseCase[Unit] {
+  override protected def validations: List[Validations.ValidationRules] = Nil
+  override def doAction(): Unit = {}
+
+}
 
 class UseCaseValidationSpec extends AnyFeatureSpec with GivenWhenThen {
 
@@ -15,9 +21,7 @@ class UseCaseValidationSpec extends AnyFeatureSpec with GivenWhenThen {
 
     Scenario("The validation rule is empty") {
       Given("A UseCase object without validation rule")
-      val useCase = new UseCase {
-        override def validations = Nil
-      }
+      val useCase = new DoNothingUseCase
 
       When("call validate() for the usecase object")
       val validationResult = useCase.validate()
@@ -28,7 +32,7 @@ class UseCaseValidationSpec extends AnyFeatureSpec with GivenWhenThen {
 
     Scenario("There is one validation, and the validation passed") {
       Given("A UseCase object with validation rules")
-      class ValidationExample extends UseCase {
+      val useCase = new DoNothingUseCase {
         var isValidated = false
         val value: Int = 10
 
@@ -37,10 +41,8 @@ class UseCaseValidationSpec extends AnyFeatureSpec with GivenWhenThen {
           if (n > 0) None else Some(IsMalformed)
         }
 
-        override def validations = createValidation(fieldName = "value", value, checkValueLargeThenZero)
+        override def validations = createValidator(fieldName = "value", value, checkValueLargeThenZero)
       }
-
-      val useCase = new ValidationExample
 
       Then("it should not run any valiadtion before validate()")
       useCase.isValidated shouldBe false
@@ -57,7 +59,7 @@ class UseCaseValidationSpec extends AnyFeatureSpec with GivenWhenThen {
 
     Scenario("There is one validation, and the validation failed") {
       Given("A UseCase object with validation rules")
-      class ValidationExample extends UseCase {
+      val useCase = new DoNothingUseCase {
         var isValidated = false
         val value: Int = 5 
 
@@ -66,10 +68,9 @@ class UseCaseValidationSpec extends AnyFeatureSpec with GivenWhenThen {
           if (n > 10) None else Some(IsMalformed)
         }
 
-        override def validations = createValidation(fieldName = "value", value, checkValueLargeThenTen)
+        override def validations = createValidator(fieldName = "value", value, checkValueLargeThenTen)
       }
 
-      val useCase = new ValidationExample
 
       Then("it should not run any valiadtion before validate()")
       useCase.isValidated shouldBe false
@@ -80,23 +81,21 @@ class UseCaseValidationSpec extends AnyFeatureSpec with GivenWhenThen {
       Then("it should run validation")
       useCase.isValidated shouldBe true
 
-      And("it should return list contains ValidationError")
+      And("it should return list contains FailedValidation")
       validationResult should not be empty
-      validationResult should contain theSameElementsInOrderAs List(ValidationError("value", IsMalformed))
+      validationResult should contain theSameElementsInOrderAs List(FailedValidation("value", IsMalformed))
     }
 
     Scenario("There are multiple validations, and the validation pass") {
       Given("A UseCase object with validation rules")
-      class ValidationExample extends UseCase {
+      val useCase = new DoNothingUseCase {
         val value: Int = 100
 
         def largeThenTen(n: Int): Option[ErrorDescription] = if (n > 10) None else Some(IsMalformed)
         def largeThenZero(n: Int): Option[ErrorDescription] = if (n > 0) None else Some(IsMalformed)
 
-        override def validations = createValidation(fieldName = "value", value, largeThenTen, largeThenZero)
+        override def validations = createValidator(fieldName = "value", value, largeThenTen, largeThenZero)
       }
-
-      val useCase = new ValidationExample
 
       When("when call validate() for the usecase object")
       val validationResult = useCase.validate()
@@ -107,37 +106,33 @@ class UseCaseValidationSpec extends AnyFeatureSpec with GivenWhenThen {
 
     Scenario("There are multiple validations, and one of the validation failed") {
       Given("A UseCase object with validation rules")
-      class ValidationExample extends UseCase {
+      val useCase = new DoNothingUseCase {
         val value: Int = 100
 
         def largeThenTen(n: Int): Option[ErrorDescription] = if (n > 10) None else Some(IsMalformed)
         def largeThen1000(n: Int): Option[ErrorDescription] = if (n > 1000) None else Some(AccessDenied)
 
-        override def validations = createValidation(fieldName = "value", value, largeThenTen, largeThen1000)
+        override def validations = createValidator(fieldName = "value", value, largeThenTen, largeThen1000)
       }
-
-      val useCase = new ValidationExample
 
       When("when call validate() for the usecase object")
       val validationResult = useCase.validate()
 
       Then("it should return correct validation error")
       validationResult should not be empty
-      validationResult should contain theSameElementsInOrderAs List(ValidationError("value", AccessDenied))
+      validationResult should contain theSameElementsInOrderAs List(FailedValidation("value", AccessDenied))
     }
 
     Scenario("There are multiple validations, and all of the validation failed") {
       Given("A UseCase object with validation rules")
-      class ValidationExample extends UseCase {
+      val useCase = new DoNothingUseCase {
         val value: Int = 0
 
         def largeThenTen(n: Int): Option[ErrorDescription] = if (n > 10) None else Some(IsMalformed)
         def largeThen1000(n: Int): Option[ErrorDescription] = if (n > 1000) None else Some(AccessDenied)
 
-        override def validations = createValidation(fieldName = "value", value, largeThenTen, largeThen1000)
+        override def validations = createValidator(fieldName = "value", value, largeThenTen, largeThen1000)
       }
-
-      val useCase = new ValidationExample
 
       When("when call validate() for the usecase object")
       val validationResult = useCase.validate()
@@ -145,14 +140,14 @@ class UseCaseValidationSpec extends AnyFeatureSpec with GivenWhenThen {
       Then("it should return correct validation error")
       validationResult should not be empty
       validationResult should contain theSameElementsInOrderAs List(
-        ValidationError("value", IsMalformed),
-        ValidationError("value", AccessDenied)
+        FailedValidation("value", IsMalformed),
+        FailedValidation("value", AccessDenied)
       )
     }
 
     Scenario("Group validations by field, and all of the validation pass") {
       Given("A UseCase object with validation rules")
-      class ValidationExample extends UseCase {
+      val useCase = new DoNothingUseCase {
         val value1: Int = 10000
         val value2: Int = 20000
 
@@ -160,12 +155,10 @@ class UseCaseValidationSpec extends AnyFeatureSpec with GivenWhenThen {
         def largeThen1000(n: Int): Option[ErrorDescription] = if (n > 1000) None else Some(AccessDenied)
 
         override def validations = groupByField(
-          createValidation(fieldName = "value1", value1, largeThen10, largeThen1000),
-          createValidation(fieldName = "value2", value2, largeThen10, largeThen1000)
+          createValidator(fieldName = "value1", value1, largeThen10, largeThen1000),
+          createValidator(fieldName = "value2", value2, largeThen10, largeThen1000)
         )
       }
-
-      val useCase = new ValidationExample
 
       When("when call validate() for the usecase object")
       val validationResult = useCase.validate()
@@ -176,7 +169,7 @@ class UseCaseValidationSpec extends AnyFeatureSpec with GivenWhenThen {
 
     Scenario("Group validations by field, and some of the validation failed") {
       Given("A UseCase object with validation rules")
-      class ValidationExample extends UseCase {
+      val useCase = new DoNothingUseCase {
         val value1: Int = 0
         val value2: Int = 100 
 
@@ -184,12 +177,11 @@ class UseCaseValidationSpec extends AnyFeatureSpec with GivenWhenThen {
         def largeThen1000(n: Int): Option[ErrorDescription] = if (n > 1000) None else Some(AccessDenied)
 
         override def validations = groupByField(
-          createValidation(fieldName = "value1", value1, largeThen10, largeThen1000),
-          createValidation(fieldName = "value2", value2, largeThen10, largeThen1000)
+          createValidator(fieldName = "value1", value1, largeThen10, largeThen1000),
+          createValidator(fieldName = "value2", value2, largeThen10, largeThen1000)
         )
       }
 
-      val useCase = new ValidationExample
 
       When("when call validate() for the usecase object")
       val validationResult = useCase.validate()
@@ -198,9 +190,9 @@ class UseCaseValidationSpec extends AnyFeatureSpec with GivenWhenThen {
       validationResult should not be empty
       validationResult.size shouldBe 3
       validationResult should contain theSameElementsInOrderAs List(
-        ValidationError("value1", IsMalformed),
-        ValidationError("value1", AccessDenied),
-        ValidationError("value2", AccessDenied)
+        FailedValidation("value1", IsMalformed),
+        FailedValidation("value1", AccessDenied),
+        FailedValidation("value2", AccessDenied)
       )
       
     }

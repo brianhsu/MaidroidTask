@@ -4,11 +4,12 @@ import org.scalatest.featurespec.AnyFeatureSpec
 import org.scalatest._
 import org.scalatest.matchers.should.Matchers._
 import scala.language.reflectiveCalls
+import moe.brianhsu.maidroidtask.entity._
 
 class DoNothingUseCase extends UseCase[Unit] {
-  override protected def validations: List[Validations.ValidationRules] = Nil
+  override def validations: List[Validations.ValidationRules] = Nil
   override def doAction(): Unit = {}
-
+  override def journals: List[Journal] = Nil
 }
 
 class UseCaseValidationSpec extends AnyFeatureSpec with GivenWhenThen {

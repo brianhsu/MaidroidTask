@@ -10,5 +10,9 @@ object Validations {
   trait ErrorDescription
   case object IsMalformed extends ErrorDescription
   case object AccessDenied extends ErrorDescription
+  case object Duplicated extends ErrorDescription
+  case object Required extends ErrorDescription
+  case object NotFound extends ErrorDescription
+
 }
 

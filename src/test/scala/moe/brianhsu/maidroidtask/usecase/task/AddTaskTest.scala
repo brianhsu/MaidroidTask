@@ -1,9 +1,9 @@
 package moe.brianhsu.maidroidtask.usecase.task
 
-import java.time.LocalDateTime
+import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{InsertLog, Journal, P1, Task, User}
+import moe.brianhsu.maidroidtask.entity.{InsertLog, Journal, P1, ScheduledAt, Task, User}
 import moe.brianhsu.maidroidtask.usecase.Validations.{Duplicated, FailedValidation, NotFound, Required, ValidationErrors}
 import moe.brianhsu.maidroidtask.usecase.fixture.{BaseFixture, BaseFixtureFeature}
 
@@ -94,7 +94,12 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
         priority = Some(P1),
         waitUntil = Some(LocalDateTime.parse("2020-07-30T10:11:12")),
         due = Some(LocalDateTime.parse("2020-08-30T10:00:00")),
-        scheduled = Some(LocalDateTime.parse("2020-08-11T23:44:45"))
+        scheduledAt = Some(
+          ScheduledAt(
+            LocalDate.parse("2020-08-11"),
+            Some(LocalTime.parse("23:44:45"))
+          )
+        )
       )
 
       When("run the use case")
@@ -119,7 +124,12 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
         priority = Some(P1),
         waitUntil = Some(LocalDateTime.parse("2020-07-30T10:11:12")),
         due = Some(LocalDateTime.parse("2020-08-30T10:00:00")),
-        scheduled = Some(LocalDateTime.parse("2020-08-11T23:44:45"))
+        scheduledAt = Some(
+          ScheduledAt(
+            LocalDate.parse("2020-08-11"),
+            Some(LocalTime.parse("23:44:45"))
+          )
+        )
       )
 
       When("run the use case")
@@ -137,11 +147,12 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
       taskInStorage.project shouldBe None
       taskInStorage.tags shouldBe Nil
       taskInStorage.dependsOn shouldBe taskDependsOn
-      taskInStorage.note shouldBe Some("Note")
-      taskInStorage.priority shouldBe Some(P1)
-      taskInStorage.waitUntil shouldBe Some(LocalDateTime.parse("2020-07-30T10:11:12"))
-      taskInStorage.due shouldBe Some(LocalDateTime.parse("2020-08-30T10:00:00"))
-      taskInStorage.scheduled shouldBe Some(LocalDateTime.parse("2020-08-11T23:44:45"))
+      taskInStorage.note.value shouldBe "Note"
+      taskInStorage.priority.value shouldBe P1
+      taskInStorage.waitUntil.value shouldBe LocalDateTime.parse("2020-07-30T10:11:12")
+      taskInStorage.due.value shouldBe LocalDateTime.parse("2020-08-30T10:00:00")
+      taskInStorage.scheduledAt.value.date shouldBe LocalDate.parse("2020-08-11")
+      taskInStorage.scheduledAt.value.time.value shouldBe LocalTime.parse("23:44:45")
       taskInStorage.isTrashed shouldBe false
       taskInStorage.isDone shouldBe false
       taskInStorage.createTime shouldBe fixture.generator.currentTime

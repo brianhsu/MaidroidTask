@@ -2,18 +2,15 @@ package moe.brianhsu.maidroidtask.usecase
 
 import org.scalatest._
 import org.scalatest.featurespec.AnyFeatureSpec
-import org.scalatest.matchers.should.Matchers._
-import org.scalatest.TryValues._
 
 import scala.language.reflectiveCalls
-import scala.util._
-
 import java.time.LocalDateTime
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity._
+import org.scalatest.matchers.should.Matchers
 
-class UseCaseExecutorSpec extends AnyFeatureSpec with GivenWhenThen {
+class UseCaseExecutorTest extends AnyFeatureSpec with GivenWhenThen with Matchers with TryValues {
 
   import Validations._
 

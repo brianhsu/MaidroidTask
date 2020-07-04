@@ -3,7 +3,7 @@ package moe.brianhsu.maidroidtask.usecase.task
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Journal, Task, TrashLog}
-import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, FailedValidation, NotFound, ValidationErrors}
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, FailedValidation, NotFound, ValidationErrors}
 import moe.brianhsu.maidroidtask.usecase.fixture.{BaseFixture, BaseFixtureFeature}
 
 import scala.util.Try
@@ -62,7 +62,6 @@ class TrashTaskTest extends BaseFixtureFeature[TrashTaskFixture] {
   Feature("Mark the task as trashed") {
     Scenario("Delete the task") { fixture =>
       Given("user request to trash a task belong to them")
-      val userId = fixture.loggedInUser.uuid
       val request = TrashTask.Request(fixture.loggedInUser, fixture.taskUUID)
 
       When("run the use case")

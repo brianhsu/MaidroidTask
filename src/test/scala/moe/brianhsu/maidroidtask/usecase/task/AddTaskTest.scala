@@ -3,7 +3,7 @@ package moe.brianhsu.maidroidtask.usecase.task
 import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{InsertLog, Journal, P1, ScheduledAt, Task, User}
+import moe.brianhsu.maidroidtask.entity.{InsertLog, Journal, P1, ScheduledAt, Task}
 import moe.brianhsu.maidroidtask.usecase.Validations.{Duplicated, FailedValidation, NotFound, Required, ValidationErrors}
 import moe.brianhsu.maidroidtask.usecase.fixture.{BaseFixture, BaseFixtureFeature}
 

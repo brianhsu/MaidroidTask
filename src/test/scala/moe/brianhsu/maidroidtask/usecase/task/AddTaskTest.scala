@@ -107,12 +107,21 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
       Given("we request to add a task with correct fields")
       val taskDependsOn = List(fixture.uuidInSystem)
       val taskUUID = UUID.randomUUID
-      val request = AddTask.Request(fixture.loggedInUser, taskUUID, "Description", note = Some("Note"), dependsOn = taskDependsOn, priority = Some(P1), waitUntil = Some(LocalDateTime.parse("2020-07-30T10:11:12")), due = Some(LocalDateTime.parse("2020-08-30T10:00:00")), scheduledAt = Some(
-                ScheduledAt(
-                  LocalDate.parse("2020-08-11"),
-                  Some(LocalTime.parse("23:44:45"))
-                )
-              ))
+      val request = AddTask.Request(
+        fixture.loggedInUser, taskUUID, "Description",
+        note = Some("Note"),
+        dependsOn = taskDependsOn,
+        priority = Some(P1),
+        waitUntil = Some(LocalDateTime.parse("2020-07-30T10:11:12")),
+        due = Some(LocalDateTime.parse("2020-08-30T10:00:00")),
+        scheduledAt = Some(
+          ScheduledAt(
+            LocalDate.parse("2020-08-11"),
+            Some(LocalTime.parse("23:44:45"))
+          )
+        ),
+        isDone = true
+      )
 
       When("run the use case")
       val (response, journal) = fixture.run(request)
@@ -134,7 +143,7 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
         waitUntil = request.waitUntil,
         due = request.due,
         scheduledAt = request.scheduledAt,
-        isDone = false,
+        isDone = true,
         isTrashed = false,
         createTime = fixture.generator.currentTime,
         updateTime = fixture.generator.currentTime

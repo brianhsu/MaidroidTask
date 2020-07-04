@@ -18,6 +18,7 @@ class EditTaskFixture extends BaseFixture {
   val otherUserTaskUUID = UUID.fromString("d6c0bab2-dd90-462f-bb6f-682a97405e64")
 
   private val fixtureCreateTime = LocalDateTime.parse("2020-07-30T11:12:13")
+
   val task1 = taskRepo.write.insert(Task(task1UUID, loggedInUser.uuid, "SomeTask 1", createTime = fixtureCreateTime, updateTime = fixtureCreateTime))
   val task2 = taskRepo.write.insert(Task(task2UUID, loggedInUser.uuid, "SomeTask 2", createTime = fixtureCreateTime, updateTime = fixtureCreateTime))
   val task3 = taskRepo.write.insert(

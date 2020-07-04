@@ -20,8 +20,8 @@ trait UseCase[T] {
 
   protected def groupByField(validationsForFields: List[ValidationRules]*) = validationsForFields.toList.flatten
 
-  protected def createValidator[T](fieldName: String, value: T, validators: Validator[T]*): List[ValidationRules] = { 
-    validators.toList.map { validator => () => {
+  protected def createValidator[T](fieldName: String, value: T, firstValidation: Validator[T], validators: Validator[T]*): List[ValidationRules] = {
+    (firstValidation :: validators.toList).map { validator => () => {
         validator(value).map { errorDescription => FailedValidation(fieldName, errorDescription) }
       }
     }

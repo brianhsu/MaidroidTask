@@ -13,15 +13,18 @@ Goals
 
 During the devlopement of this system, I would like to test that I would able to achieve the following goals and test my skills as a sotware engineer.
 
-  - Using the conepct of Clean Architecture to construct a software that could plug-in diffrent styles input output mechanism and UI.
-  - TDD, for every production code, I should write test first.
-  - BDD, for the use case objects, I should use the conecpt of BDD. And my test output will looks like specification instead of testing result.
-  - Make test coverage rate I high as it could be. At least 90% statement coverage, 100% is even better.
-  - It should be able to swith between any data storage system by simply implement correct interface.
-  - It should be able to do DB read-write split by simply implement correct interface in our code.
-  - It should be able to do DB sharding by simply implement correct interface in our code.
-  - It should be able to sync the data between web application / Android application or even dekstop app.
-  - The API server should able to handle C10K problem.
+  - Using the conepct of Clean Architecture to construct a software that could plug-in different styles input output mechanism and UI.
+  - Test Driver
+    - TDD, for every production code, I should write test first.
+    - BDD, for the use case objects, I should use the concept of BDD, and my test output will look like specification instead of testing result.
+    - Make test coverage rate I high as it could be. At least 90% statement coverage, 100% is even better.
+  - Storage design:
+    - It should be able to switch between any data storage system by simply implement correct interface.
+    - It should be able to do DB read-write split by simply implement correct interface in our code.
+    - It should be able to do DB sharding by simply implement correct interface in our code.
+  - Usability
+    - It should be able to sync the data between web application / Android application or even desktop app.
+    - The API server should able to handle C10K problem.
 
 With these goals in mind, this is the core function library of this GTD system. Since it's a core library, it won't have any detail implementation (like DB or UI or even a API server) inside this repository. They should be belong to separate projects.
 
@@ -34,7 +37,6 @@ After that, simply run sbt test on the repository.
 
     $ cd MaidroidTask/
     $ sbt test                            # Test everything
-
 
 [1]: https://en.wikipedia.org/wiki/Getting_Things_Done
 [2]: https://www.youtube.com/watch?v=WpkDN78P884

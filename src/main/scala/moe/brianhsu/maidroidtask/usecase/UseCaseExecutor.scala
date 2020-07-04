@@ -5,6 +5,7 @@ import scala.util.Try
 import moe.brianhsu.maidroidtask.entity._
 
 class UseCaseExecutor {
+
   def runUseCase[T](useCase: UseCase[T]): Try[T] = Try {
     useCase.validate() match {
       case Nil => 
@@ -12,7 +13,7 @@ class UseCaseExecutor {
         appendJournals(useCase.journals)
         result
       case failedValidations => 
-        throw new ValidationErrors(failedValidations)
+        throw ValidationErrors(failedValidations)
     }
   }
 

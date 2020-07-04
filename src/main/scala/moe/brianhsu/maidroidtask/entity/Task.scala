@@ -14,6 +14,6 @@ case class Task(uuid: UUID, userUUID: UUID,
                 due: Option[LocalDateTime] = None,
                 scheduled: Option[LocalDateTime] = None,
                 isDone: Boolean = false,
-                isDeleted: Boolean = false,
+                isTrashed: Boolean = false,
                 createTime: LocalDateTime = LocalDateTime.now(),
                 updateTime: LocalDateTime = LocalDateTime.now()) extends Entity

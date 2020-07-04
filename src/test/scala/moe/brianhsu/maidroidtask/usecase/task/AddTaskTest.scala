@@ -4,18 +4,25 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{InsertLog, Journal, P1, Task, User}
-import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
-import moe.brianhsu.maidroidtask.gateway.repo.memory.InMemoryTaskRepo
 import moe.brianhsu.maidroidtask.usecase.Validations.{Duplicated, FailedValidation, NotFound, Required, ValidationErrors}
-import moe.brianhsu.maidroidtask.usecase.{DoNothingUseCase, UseCaseExecutor}
-import org.scalactic.Validation
-import org.scalatest.{GivenWhenThen, OptionValues, Outcome, TryValues}
-import org.scalatest.featurespec.FixtureAnyFeatureSpec
-import org.scalatest.matchers.should.Matchers
+import moe.brianhsu.maidroidtask.usecase.fixture.{BaseFixture, BaseFixtureFeature}
 
-import scala.util.{Success, Try}
+import scala.util.Try
 
-class AddTaskTest extends FixtureAnyFeatureSpec with GivenWhenThen with TryValues with Matchers with OptionValues {
+class AddTaskFixture extends BaseFixture {
+  val uuidInSystem = UUID.fromString("ba2d0314-c049-48cb-99db-b068ceeb4a41")
+
+  taskRepo.write.insert(Task(uuidInSystem, loggedInUser.uuid, "Description"))
+
+  def run(request: AddTask.Request): (Try[Task], List[Journal]) = {
+    val useCase = new AddTask(request)
+    (useCase.execute(), useCase.journals)
+  }
+}
+
+class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
+
+  override def createFixture = new AddTaskFixture
 
   Feature("Validation before add task to system") {
 
@@ -99,6 +106,7 @@ class AddTaskTest extends FixtureAnyFeatureSpec with GivenWhenThen with TryValue
   }
 
   Feature("Add task to system") {
+    info("As a user, I would like to add a single task to system.")
     Scenario("Add task to storage") { fixture =>
       Given("we request to add a task with correct fields")
       val taskDependsOn = List(fixture.uuidInSystem)
@@ -134,7 +142,7 @@ class AddTaskTest extends FixtureAnyFeatureSpec with GivenWhenThen with TryValue
       taskInStorage.waitUntil shouldBe Some(LocalDateTime.parse("2020-07-30T10:11:12"))
       taskInStorage.due shouldBe Some(LocalDateTime.parse("2020-08-30T10:00:00"))
       taskInStorage.scheduled shouldBe Some(LocalDateTime.parse("2020-08-11T23:44:45"))
-      taskInStorage.isDeleted shouldBe false
+      taskInStorage.isTrashed shouldBe false
       taskInStorage.isDone shouldBe false
       taskInStorage.createTime shouldBe fixture.generator.currentTime
       taskInStorage.updateTime shouldBe fixture.generator.currentTime
@@ -142,36 +150,12 @@ class AddTaskTest extends FixtureAnyFeatureSpec with GivenWhenThen with TryValue
       And("generate correct journal entry")
       journal should contain theSameElementsInOrderAs List(
         InsertLog(
+          fixture.generator.randomUUID,
           request.loggedInUser.uuid,
           taskUUID, taskReturned,
           fixture.generator.currentTime
         )
       )
-    }
-  }
-
-  override protected def withFixture(test: OneArgTest): Outcome = test(new TestFixture)
-  override type FixtureParam = TestFixture
-
-  class FixedTestDataGenerator extends DynamicDataGenerator {
-    override def randomUUID: UUID = UUID.fromString("4fe31c87-7130-4d61-9912-3fa6c0c9b7ef")
-    override def currentTime: LocalDateTime = LocalDateTime.parse("2020-07-02T09:10:11")
-  }
-
-  class TestFixture {
-
-    implicit val generator = new FixedTestDataGenerator
-    implicit val useCaseExecutor = new UseCaseExecutor
-    implicit val taskRepo = new InMemoryTaskRepo
-
-    val loggedInUser = User(UUID.randomUUID(), "user@example.com", "UserName")
-    val uuidInSystem = UUID.fromString("ba2d0314-c049-48cb-99db-b068ceeb4a41")
-
-    taskRepo.write.insert(Task(uuidInSystem, loggedInUser.uuid, "Description"))
-
-    def run(request: AddTask.Request): (Try[Task], List[Journal]) = {
-      val useCase = new AddTask(request)
-      (useCase.execute(), useCase.journals)
     }
   }
 }

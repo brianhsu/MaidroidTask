@@ -27,7 +27,7 @@ class AddTask(request: Request)(implicit val taskRepo: TaskRepo, generator: Dyna
     request.uuid, request.loggedInUser.uuid,
     request.description, request.note, request.project, request.tags,
     request.dependsOn, request.priority, request.waitUntil, request.due,
-    request.scheduled, isDone = false, isDeleted = false,
+    request.scheduled, isDone = false, isTrashed = false,
     generator.currentTime, generator.currentTime
   )
 
@@ -55,7 +55,7 @@ class AddTask(request: Request)(implicit val taskRepo: TaskRepo, generator: Dyna
   }
 
   override def journals: List[Journal] = List(
-    InsertLog(request.loggedInUser.uuid, request.uuid, task, generator.currentTime)
+    InsertLog(generator.randomUUID, request.loggedInUser.uuid, request.uuid, task, generator.currentTime)
   )
 
   override def validations: List[ValidationRules] = groupByField(

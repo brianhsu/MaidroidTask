@@ -13,11 +13,25 @@ class EditTaskFixture extends BaseFixture {
 
   val task1UUID = UUID.fromString("65d94f14-b00d-4060-8c8f-30a64aca8f08")
   val task2UUID = UUID.fromString("a641ec70-6402-4e8b-b467-50e73aa49bc1")
+  val task3UUID = UUID.fromString("83537092-07cb-4f85-afe1-cf6188edbf00")
 
   val otherUserTaskUUID = UUID.fromString("d6c0bab2-dd90-462f-bb6f-682a97405e64")
 
   val task1 = taskRepo.write.insert(Task(task1UUID, loggedInUser.uuid, "SomeTask 1"))
   val task2 = taskRepo.write.insert(Task(task2UUID, loggedInUser.uuid, "SomeTask 2"))
+  val task3 = taskRepo.write.insert(
+    Task(
+      task3UUID, loggedInUser.uuid, "SomeTask 3",
+      note = Some("note"),
+      project = Some(UUID.randomUUID()),
+      tags = List(UUID.randomUUID(), UUID.randomUUID()),
+      dependsOn = List(task2.uuid),
+      priority = Some(P1),
+      waitUntil = Some(LocalDateTime.parse("2020-09-30T11:11:11")),
+      due = Some(LocalDateTime.parse("2030-01-12T12:33:11")),
+      scheduledAt = Some(ScheduledAt(LocalDate.parse("2020-01-11"), None))
+    )
+  )
 
   val otherUserTask = taskRepo.write.insert(Task(otherUserTaskUUID, otherUser.uuid, "OtherUserTask"))
 
@@ -88,7 +102,7 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
   }
 
   Feature("Update task in system") {
-    Scenario("Edit task that belongs to logged in user") { fixture =>
+    Scenario("Update all fields inside a task that belongs to logged in user") { fixture =>
       Given("user request to edit a task belongs to him or her")
       val taskDependsOn = List(fixture.task2UUID)
       val request = EditTask.Request(
@@ -147,6 +161,49 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
         )
       )
     }
+
+    Scenario("Only update some fields") { fixture =>
+      Given("user request to edit a task belongs to him or her")
+      val request = EditTask.Request(
+        fixture.loggedInUser, fixture.task3UUID,
+        description = Some("NewDescription"),
+      )
+
+      When("run the use case")
+      val (response, journals) = fixture.run(request)
+
+      Then("the task in storage should only has description updated")
+      val expectedTask = Task(
+        fixture.task3UUID, fixture.loggedInUser.uuid,
+        description = "NewDescription",
+        note = fixture.task3.note,
+        project = fixture.task3.project,
+        tags = fixture.task3.tags,
+        dependsOn = fixture.task3.dependsOn,
+        priority = fixture.task3.priority,
+        waitUntil = fixture.task3.waitUntil,
+        due = fixture.task3.due,
+        scheduledAt = fixture.task3.scheduledAt,
+        isDone = fixture.task3.isDone,
+        createTime = fixture.task3.createTime,
+        updateTime = fixture.generator.currentTime
+      )
+
+      isSameTask(response.success.value, expectedTask)
+
+      And("it should also updated to storage")
+      val taskInStorage = fixture.taskRepo.read.findByUUID(expectedTask.uuid)
+      isSameTask(taskInStorage.value, expectedTask)
+
+      And("the journals should have correct entries")
+      journals shouldBe List(
+        UpdateLog(
+          fixture.generator.randomUUID, request.loggedInUser.uuid,
+          request.uuid, expectedTask, fixture.generator.currentTime
+        )
+      )
+    }
+
   }
 
 }

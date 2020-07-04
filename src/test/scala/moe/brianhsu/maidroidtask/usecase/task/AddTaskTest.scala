@@ -123,22 +123,25 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
       taskInStorage shouldBe taskReturned
 
       And("the returned task should contains correct data")
-      taskInStorage.uuid shouldBe taskUUID
-      taskInStorage.userUUID shouldBe request.loggedInUser.uuid
-      taskInStorage.description shouldBe request.description
-      taskInStorage.project shouldBe None
-      taskInStorage.tags shouldBe Nil
-      taskInStorage.dependsOn shouldBe taskDependsOn
-      taskInStorage.note.value shouldBe "Note"
-      taskInStorage.priority.value shouldBe P1
-      taskInStorage.waitUntil.value shouldBe LocalDateTime.parse("2020-07-30T10:11:12")
-      taskInStorage.due.value shouldBe LocalDateTime.parse("2020-08-30T10:00:00")
-      taskInStorage.scheduledAt.value.date shouldBe LocalDate.parse("2020-08-11")
-      taskInStorage.scheduledAt.value.time.value shouldBe LocalTime.parse("23:44:45")
-      taskInStorage.isTrashed shouldBe false
-      taskInStorage.isDone shouldBe false
-      taskInStorage.createTime shouldBe fixture.generator.currentTime
-      taskInStorage.updateTime shouldBe fixture.generator.currentTime
+      val expectedTask = Task(
+        taskUUID, request.loggedInUser.uuid,
+        description = request.description,
+        note = request.note,
+        project = request.project,
+        tags = request.tags,
+        dependsOn = request.dependsOn,
+        priority = request.priority,
+        waitUntil = request.waitUntil,
+        due = request.due,
+        scheduledAt = request.scheduledAt,
+        isDone = false,
+        isTrashed = false,
+        createTime = fixture.generator.currentTime,
+        updateTime = fixture.generator.currentTime
+      )
+
+      isSameTask(taskReturned, expectedTask)
+      isSameTask(taskInStorage, expectedTask)
 
       And("generate correct journal entry")
       journal should contain theSameElementsInOrderAs List(

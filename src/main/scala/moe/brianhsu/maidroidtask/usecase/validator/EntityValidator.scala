@@ -8,6 +8,15 @@ import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, 
 
 object EntityValidator {
 
+  def allExist[T](uuidList: List[UUID])(implicit readable: ReadableRepo[T]): Option[ErrorDescription] = {
+    uuidList.foreach { uuid =>
+      if (exist(uuid).isDefined) {
+        return Some(NotFound)
+      }
+    }
+    None
+  }
+
   def noCollision[T](uuid: UUID)(implicit readable: ReadableRepo[T]): Option[ErrorDescription] = {
     if (readable.findByUUID(uuid).isDefined) {
       Some(Duplicated)

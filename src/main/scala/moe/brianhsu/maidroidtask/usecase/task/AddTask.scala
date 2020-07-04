@@ -40,7 +40,7 @@ class AddTask(request: Request)(implicit val taskRepo: TaskRepo, generator: Dyna
     groupByField(
       createValidator("uuid", request.uuid, EntityValidator.noCollision[Task]),
       createValidator("description", request.description, GenericValidator.notEmpty),
-      createValidator("dependsOn", request.dependsOn, (d: List[UUID]) => d.flatMap(EntityValidator.exist[Task]).headOption)
+      createValidator("dependsOn", request.dependsOn, EntityValidator.allExist[Task])
     )
   }
 }

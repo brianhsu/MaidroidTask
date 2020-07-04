@@ -4,9 +4,6 @@ import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.Task
 
-trait ReadableRepo[T] {
-  def findByUUID(uuid: UUID): Option[T]
-}
 
 trait TaskRepo {
 
@@ -14,7 +11,7 @@ trait TaskRepo {
   def write: TaskWriteable
 
   trait TaskReadable extends ReadableRepo[Task] {
-    def findByUUID(uuid: UUID): Option[Task]
+    override def findByUUID(uuid: UUID): Option[Task]
   }
 
   trait TaskWriteable {

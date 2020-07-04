@@ -5,9 +5,10 @@ import java.util.UUID
 import moe.brianhsu.maidroidtask.entity.Task
 import moe.brianhsu.maidroidtask.gateway.repo.TaskRepo
 
-class InMemoryTaskRepo extends TaskRepo {
+class InMemoryTaskRepo(data: InMemoryData) extends TaskRepo {
 
-  private var uuidToTask: Map[UUID, Task] = Map.empty
+  import data._
+
   override def read: TaskReadable = new InMemoryTaskRepoRead
   override def write: TaskWriteable = new InMemoryTaskRepoWrite
 

@@ -16,4 +16,4 @@ case class Task(uuid: UUID, userUUID: UUID,
                 isDone: Boolean = false,
                 isTrashed: Boolean = false,
                 createTime: LocalDateTime = LocalDateTime.now(),
-                updateTime: LocalDateTime = LocalDateTime.now()) extends Entity
+                updateTime: LocalDateTime = LocalDateTime.now()) extends EntityWithUserId

@@ -106,7 +106,7 @@ class UseCaseExecutorSpec extends AnyFeatureSpec with GivenWhenThen {
       val journalList = List(
         InsertLog(historyUUID, userUUID, insertUUID, InsertedEntity, LocalDateTime.parse("2020-07-01T10:00:00")),
         UpdateLog(historyUUID, userUUID, updateUUID, UpdatedEntity, LocalDateTime.parse("2020-07-01T11:00:00")),
-        DeleteLog(historyUUID, userUUID, deleteUUID, DeletedEntity, LocalDateTime.parse("2020-07-01T11:00:00"))
+        TrashLog(historyUUID, userUUID, deleteUUID, DeletedEntity, LocalDateTime.parse("2020-07-01T11:00:00"))
       )
 
       And("a use case with journals")

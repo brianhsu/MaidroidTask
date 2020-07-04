@@ -2,8 +2,9 @@ package moe.brianhsu.maidroidtask.usecase.validator
 
 import java.util.UUID
 
+import moe.brianhsu.maidroidtask.entity.{EntityWithUserId, User}
 import moe.brianhsu.maidroidtask.gateway.repo.ReadableRepo
-import moe.brianhsu.maidroidtask.usecase.Validations.{Duplicated, ErrorDescription, NotFound}
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, ErrorDescription, NotFound}
 
 object EntityValidator {
 
@@ -22,4 +23,14 @@ object EntityValidator {
       None
     }
   }
+
+  def belongToUser[T <: EntityWithUserId](loggedInUser: User)(entityUUID: UUID)(implicit readable: ReadableRepo[T]): Option[ErrorDescription] = {
+    val userIdHolder = readable.findByUUID(entityUUID).map(_.userUUID)
+
+    userIdHolder match {
+      case Some(userUUID) if userUUID != loggedInUser.uuid => Some(AccessDenied)
+      case _ => None
+    }
+  }
+
 }

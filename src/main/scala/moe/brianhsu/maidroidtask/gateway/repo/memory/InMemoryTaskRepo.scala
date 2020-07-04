@@ -20,6 +20,11 @@ class InMemoryTaskRepo extends TaskRepo {
       uuidToTask += task.uuid -> task
       task
     }
+
+    override def update(uuid: UUID, updatedTask: Task): Task = {
+      uuidToTask += uuid -> updatedTask
+      updatedTask
+    }
   }
 
 }

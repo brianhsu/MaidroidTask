@@ -18,6 +18,7 @@ trait TaskRepo {
   }
 
   trait TaskWriteable {
+    def update(uuid: UUID, updatedTask: Task): Task
     def insert(task: Task): Task
   }
 

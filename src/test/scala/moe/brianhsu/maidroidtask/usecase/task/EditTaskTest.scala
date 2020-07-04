@@ -17,8 +17,9 @@ class EditTaskFixture extends BaseFixture {
 
   val otherUserTaskUUID = UUID.fromString("d6c0bab2-dd90-462f-bb6f-682a97405e64")
 
-  val task1 = taskRepo.write.insert(Task(task1UUID, loggedInUser.uuid, "SomeTask 1"))
-  val task2 = taskRepo.write.insert(Task(task2UUID, loggedInUser.uuid, "SomeTask 2"))
+  private val fixtureCreateTime = LocalDateTime.parse("2020-07-30T11:12:13")
+  val task1 = taskRepo.write.insert(Task(task1UUID, loggedInUser.uuid, "SomeTask 1", createTime = fixtureCreateTime, updateTime = fixtureCreateTime))
+  val task2 = taskRepo.write.insert(Task(task2UUID, loggedInUser.uuid, "SomeTask 2", createTime = fixtureCreateTime, updateTime = fixtureCreateTime))
   val task3 = taskRepo.write.insert(
     Task(
       task3UUID, loggedInUser.uuid, "SomeTask 3",
@@ -29,11 +30,18 @@ class EditTaskFixture extends BaseFixture {
       priority = Some(P1),
       waitUntil = Some(LocalDateTime.parse("2020-09-30T11:11:11")),
       due = Some(LocalDateTime.parse("2030-01-12T12:33:11")),
-      scheduledAt = Some(ScheduledAt(LocalDate.parse("2020-01-11"), None))
+      scheduledAt = Some(ScheduledAt(LocalDate.parse("2020-01-11"), None)),
+      createTime = fixtureCreateTime,
+      updateTime = fixtureCreateTime
     )
   )
 
-  val otherUserTask = taskRepo.write.insert(Task(otherUserTaskUUID, otherUser.uuid, "OtherUserTask"))
+  val otherUserTask = taskRepo.write.insert(
+    Task(
+      otherUserTaskUUID, otherUser.uuid, "OtherUserTask",
+      createTime = fixtureCreateTime, updateTime = fixtureCreateTime
+    )
+  )
 
   def run(request: EditTask.Request): (Try[Task], List[Journal]) = {
     val useCase = new EditTask(request)

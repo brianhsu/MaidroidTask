@@ -11,8 +11,15 @@ import scala.util.Try
 
 class AddTaskFixture extends BaseFixture {
   val uuidInSystem = UUID.fromString("ba2d0314-c049-48cb-99db-b068ceeb4a41")
+  private val fixtureCreateTime = LocalDateTime.parse("2020-07-30T11:12:13")
 
-  taskRepo.write.insert(Task(uuidInSystem, loggedInUser.uuid, "Description"))
+  taskRepo.write.insert(
+    Task(
+      uuidInSystem, loggedInUser.uuid, "Description",
+      createTime = fixtureCreateTime,
+      updateTime = fixtureCreateTime
+    )
+  )
 
   def run(request: AddTask.Request): (Try[Task], List[Journal]) = {
     val useCase = new AddTask(request)

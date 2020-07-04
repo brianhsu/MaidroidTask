@@ -1,5 +1,6 @@
 package moe.brianhsu.maidroidtask.usecase.task
 
+import java.time.LocalDateTime
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Journal, Task, TrashLog}
@@ -11,9 +12,10 @@ import scala.util.Try
 class TrashTaskFixture extends BaseFixture {
   val otherUserTaskUUID = UUID.fromString("e334b225-d4b7-406a-a20d-3b0050a14b12")
   val taskUUID = UUID.fromString("8c2f648b-bbf3-4c00-978d-d910a5c7249e")
+  private val fixtureCreateTime = LocalDateTime.parse("2020-07-30T11:12:13")
 
-  taskRepo.write.insert(Task(otherUserTaskUUID, otherUser.uuid, "Task of Other User"))
-  taskRepo.write.insert(Task(taskUUID, loggedInUser.uuid, "Task of LoggedIn User"))
+  taskRepo.write.insert(Task(otherUserTaskUUID, otherUser.uuid, "Task of Other User", createTime = fixtureCreateTime, updateTime = fixtureCreateTime))
+  taskRepo.write.insert(Task(taskUUID, loggedInUser.uuid, "Task of LoggedIn User", createTime = fixtureCreateTime, updateTime = fixtureCreateTime))
 
   def run(request: TrashTask.Request): (Try[Task], List[Journal]) = {
     val useCase = new TrashTask(request)

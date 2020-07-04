@@ -1,4 +1,4 @@
-package moe.brianhsu.maidroidtask.usecase.fixture
+package moe.brianhsu.maidroidtask.utils.fixture
 
 import moe.brianhsu.maidroidtask.entity.Task
 import org.scalatest.{GivenWhenThen, Inside, OptionValues, Outcome, TryValues}

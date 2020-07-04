@@ -1,4 +1,4 @@
-package moe.brianhsu.maidroidtask.usecase.fixture
+package moe.brianhsu.maidroidtask.utils.fixture
 
 import java.time.LocalDateTime
 import java.util.UUID

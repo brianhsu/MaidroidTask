@@ -5,7 +5,7 @@ import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{InsertLog, Journal, P1, ScheduledAt, Task}
 import moe.brianhsu.maidroidtask.usecase.Validations.{Duplicated, FailedValidation, NotFound, Required, ValidationErrors}
-import moe.brianhsu.maidroidtask.usecase.fixture.{BaseFixture, BaseFixtureFeature}
+import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 import scala.util.Try
 

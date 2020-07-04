@@ -31,7 +31,7 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
 
     Scenario("Validation failed because UUID collision") { fixture =>
       Given("we request to add a task with UUID that already in system")
-      val request = AddTask.Request(fixture.uuidInSystem, fixture.loggedInUser, "Description")
+      val request = AddTask.Request(fixture.loggedInUser, fixture.uuidInSystem, "Description")
 
       When("run the use case")
       val (response, _) = fixture.run(request)
@@ -44,7 +44,7 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
 
     Scenario("Validation failed because we don't provide description") { fixture =>
       Given("we request to add a task without description")
-      val request = AddTask.Request(UUID.randomUUID, fixture.loggedInUser, "")
+      val request = AddTask.Request(fixture.loggedInUser, UUID.randomUUID, "")
 
       When("run the use case")
       val (response, _) = fixture.run(request)
@@ -57,7 +57,7 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
 
     Scenario("Validation failed because we provide description that is basically empty") { fixture =>
       Given("we request to add a task that only consist of space, tab, newline")
-      val request = AddTask.Request(UUID.randomUUID, fixture.loggedInUser, "    \t   \n  ")
+      val request = AddTask.Request(fixture.loggedInUser, UUID.randomUUID, "    \t   \n  ")
 
       When("run the use case")
       val (response, _) = fixture.run(request)
@@ -72,7 +72,7 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
       Given("we request to add a task that depends on a non-exist task UUID")
       val nonExistUUID = UUID.fromString("13482407-9977-40d6-a3e8-7fb73de682c4")
       val taskDependsOn = List(nonExistUUID, fixture.uuidInSystem)
-      val request = AddTask.Request(UUID.randomUUID, fixture.loggedInUser, "Description", dependsOn = taskDependsOn)
+      val request = AddTask.Request(fixture.loggedInUser, UUID.randomUUID, "Description", dependsOn = taskDependsOn)
 
       When("run the use case")
       val (response, _) = fixture.run(request)
@@ -86,21 +86,12 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
     Scenario("Validation passed") { fixture =>
       Given("we request to add a task with all fields except project, tags")
       val taskDependsOn = List(fixture.uuidInSystem)
-      val request = AddTask.Request(
-        UUID.randomUUID, fixture.loggedInUser,
-        "Description",
-        dependsOn = taskDependsOn,
-        note = Some("Note"),
-        priority = Some(P1),
-        waitUntil = Some(LocalDateTime.parse("2020-07-30T10:11:12")),
-        due = Some(LocalDateTime.parse("2020-08-30T10:00:00")),
-        scheduledAt = Some(
-          ScheduledAt(
-            LocalDate.parse("2020-08-11"),
-            Some(LocalTime.parse("23:44:45"))
-          )
-        )
-      )
+      val request = AddTask.Request(fixture.loggedInUser, UUID.randomUUID, "Description", note = Some("Note"), dependsOn = taskDependsOn, priority = Some(P1), waitUntil = Some(LocalDateTime.parse("2020-07-30T10:11:12")), due = Some(LocalDateTime.parse("2020-08-30T10:00:00")), scheduledAt = Some(
+                ScheduledAt(
+                  LocalDate.parse("2020-08-11"),
+                  Some(LocalTime.parse("23:44:45"))
+                )
+              ))
 
       When("run the use case")
       val (response, _) = fixture.run(request)
@@ -116,21 +107,12 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
       Given("we request to add a task with correct fields")
       val taskDependsOn = List(fixture.uuidInSystem)
       val taskUUID = UUID.randomUUID
-      val request = AddTask.Request(
-        taskUUID, fixture.loggedInUser,
-        "Description",
-        dependsOn = taskDependsOn,
-        note = Some("Note"),
-        priority = Some(P1),
-        waitUntil = Some(LocalDateTime.parse("2020-07-30T10:11:12")),
-        due = Some(LocalDateTime.parse("2020-08-30T10:00:00")),
-        scheduledAt = Some(
-          ScheduledAt(
-            LocalDate.parse("2020-08-11"),
-            Some(LocalTime.parse("23:44:45"))
-          )
-        )
-      )
+      val request = AddTask.Request(fixture.loggedInUser, taskUUID, "Description", note = Some("Note"), dependsOn = taskDependsOn, priority = Some(P1), waitUntil = Some(LocalDateTime.parse("2020-07-30T10:11:12")), due = Some(LocalDateTime.parse("2020-08-30T10:00:00")), scheduledAt = Some(
+                ScheduledAt(
+                  LocalDate.parse("2020-08-11"),
+                  Some(LocalTime.parse("23:44:45"))
+                )
+              ))
 
       When("run the use case")
       val (response, journal) = fixture.run(request)

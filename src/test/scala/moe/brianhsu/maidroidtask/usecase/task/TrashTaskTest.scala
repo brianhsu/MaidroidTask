@@ -14,6 +14,7 @@ class TrashTaskTest extends BaseFixtureFeature[TrashTaskFixture] {
 
     Scenario("Delete non-exist task") { fixture =>
       Given("user request to trash a task does not exist")
+      //val request = TrashTask.Request(fixture.loggedInUser, )
       When("run the use case")
       Then("it should NOT pass the validation")
       pending

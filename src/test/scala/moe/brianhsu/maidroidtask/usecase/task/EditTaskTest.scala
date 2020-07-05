@@ -3,7 +3,7 @@ package moe.brianhsu.maidroidtask.usecase.task
 import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Journal, P1, ScheduledAt, Task, UpdateLog}
+import moe.brianhsu.maidroidtask.entity.{Journal, P1, ScheduledAt, Tag, Task, UpdateLog}
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, FailedValidation, NotFound, Required, ValidationErrors}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
@@ -11,19 +11,16 @@ import scala.util.Try
 
 class EditTaskFixture extends BaseFixture {
 
-  val task1UUID = UUID.fromString("65d94f14-b00d-4060-8c8f-30a64aca8f08")
-  val task2UUID = UUID.fromString("a641ec70-6402-4e8b-b467-50e73aa49bc1")
-  val task3UUID = UUID.fromString("83537092-07cb-4f85-afe1-cf6188edbf00")
-
-  val otherUserTaskUUID = UUID.fromString("d6c0bab2-dd90-462f-bb6f-682a97405e64")
-
   private val fixtureCreateTime = LocalDateTime.parse("2020-07-30T11:12:13")
 
-  val task1 = taskRepo.write.insert(Task(task1UUID, loggedInUser.uuid, "SomeTask 1", createTime = fixtureCreateTime, updateTime = fixtureCreateTime))
-  val task2 = taskRepo.write.insert(Task(task2UUID, loggedInUser.uuid, "SomeTask 2", createTime = fixtureCreateTime, updateTime = fixtureCreateTime))
+  val userTag = tagRepo.write.insert(Tag(UUID.randomUUID, loggedInUser.uuid, "ExistTag", None, isTrashed = false, generator.currentTime, generator.currentTime))
+  val otherUserTag = tagRepo.write.insert(Tag(UUID.randomUUID, otherUser.uuid, "OtherUserTag", None, isTrashed = false, generator.currentTime, generator.currentTime))
+
+  val task1 = taskRepo.write.insert(Task(UUID.randomUUID, loggedInUser.uuid, "SomeTask 1", createTime = fixtureCreateTime, updateTime = fixtureCreateTime))
+  val task2 = taskRepo.write.insert(Task(UUID.randomUUID, loggedInUser.uuid, "SomeTask 2", createTime = fixtureCreateTime, updateTime = fixtureCreateTime))
   val task3 = taskRepo.write.insert(
     Task(
-      task3UUID, loggedInUser.uuid, "SomeTask 3",
+      UUID.randomUUID, loggedInUser.uuid, "SomeTask 3",
       note = Some("note"),
       project = Some(UUID.randomUUID()),
       tags = List(UUID.randomUUID(), UUID.randomUUID()),
@@ -39,7 +36,7 @@ class EditTaskFixture extends BaseFixture {
 
   val otherUserTask = taskRepo.write.insert(
     Task(
-      otherUserTaskUUID, otherUser.uuid, "OtherUserTask",
+      UUID.randomUUID, otherUser.uuid, "OtherUserTask",
       createTime = fixtureCreateTime, updateTime = fixtureCreateTime
     )
   )
@@ -71,7 +68,7 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
 
     Scenario("Edit task that belong to other user") { fixture =>
       Given("user request to edit a task belongs to other user")
-      val request = EditTask.Request(fixture.loggedInUser, fixture.otherUserTaskUUID, Some("SomeDesc"))
+      val request = EditTask.Request(fixture.loggedInUser, fixture.otherUserTask.uuid, Some("SomeDesc"))
 
       When("run the use case")
       val (response, _) = fixture.run(request)
@@ -85,7 +82,7 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
     Scenario("Edit task that new task depends on non-exist task") { fixture =>
       Given("user request to edit a task and make it depends on non-exist task")
       val nonExistUUID = UUID.fromString("286b5649-049d-476a-9ef2-38de31e86c5b")
-      val request = EditTask.Request(fixture.loggedInUser, fixture.task1UUID, dependsOn = Some(List(fixture.task2UUID, nonExistUUID)))
+      val request = EditTask.Request(fixture.loggedInUser, fixture.task1.uuid, dependsOn = Some(List(fixture.task2.uuid, nonExistUUID)))
 
       When("run the use case")
       val (response, _) = fixture.run(request)
@@ -98,7 +95,7 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
 
     Scenario("Edit task that title is empty") { fixture =>
       Given("user request to edit a task, and new title only consist of empty characters")
-      val request = EditTask.Request(fixture.loggedInUser, fixture.task1UUID, Some("   \t \n   "))
+      val request = EditTask.Request(fixture.loggedInUser, fixture.task1.uuid, Some("   \t \n   "))
 
       When("run the use case")
       val (response, _) = fixture.run(request)
@@ -108,17 +105,57 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
       exception shouldBe a[ValidationErrors]
       exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("description", Required))
     }
+
+    Scenario("Edit task that new tags has non-exist tag UUID") { fixture =>
+      Given("user request to edit a task, and new tags has non-exist tag UUID")
+      val nonExistUUID = UUID.randomUUID
+      val newTagList = List(fixture.userTag.uuid, nonExistUUID)
+      val request = EditTask.Request(
+        fixture.loggedInUser,
+        fixture.task1.uuid,
+        tags = Some(newTagList)
+      )
+
+      When("run the use case")
+      val (response, _) = fixture.run(request)
+
+      Then("is should NOT pass the validation and yield NotFound error")
+      val exception = response.failure.exception
+      exception shouldBe a[ValidationErrors]
+      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("tags", NotFound))
+    }
+
+    Scenario("Edit task that new tags belongs to other user") { fixture =>
+      Given("user request to edit a task, and new tags belongs to other user")
+      val newTagList = List(fixture.userTag.uuid, fixture.otherUserTag.uuid)
+      val request = EditTask.Request(
+        fixture.loggedInUser,
+        fixture.task1.uuid,
+        tags = Some(newTagList)
+      )
+
+      When("run the use case")
+      val (response, _) = fixture.run(request)
+
+      Then("is should NOT pass the validation and yield NotFound error")
+      val exception = response.failure.exception
+      exception shouldBe a[ValidationErrors]
+      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("tags", AccessDenied))
+    }
+
   }
 
   Feature("Update task in system") {
     Scenario("Update all fields inside a task that belongs to logged in user") { fixture =>
       Given("user request to edit a task belongs to him or her")
-      val taskDependsOn = List(fixture.task2UUID)
+      val taskDependsOn = List(fixture.task2.uuid)
+      val newTagsList = List(fixture.userTag.uuid)
       val request = EditTask.Request(
-        fixture.loggedInUser, fixture.task1UUID,
+        fixture.loggedInUser, fixture.task1.uuid,
         description = Some("EditedDescription"),
         note = Some(Some("Note")),
         dependsOn = Some(taskDependsOn),
+        tags = Some(newTagsList),
         priority = Some(Some(P1)),
         waitUntil = Some(Some(LocalDateTime.parse("2020-07-30T10:11:12"))),
         due = Some(Some(LocalDateTime.parse("2020-08-30T10:00:00"))),
@@ -138,10 +175,11 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
 
       Then("the task in storage should be updated with new status")
       val expectedTask = Task(
-        fixture.task1UUID, fixture.loggedInUser.uuid,
+        fixture.task1.uuid, fixture.loggedInUser.uuid,
         description = "EditedDescription",
         note = Some("Note"),
         dependsOn = taskDependsOn,
+        tags = newTagsList,
         priority = Some(P1),
         waitUntil = Some(LocalDateTime.parse("2020-07-30T10:11:12")),
         due = Some(LocalDateTime.parse("2020-08-30T10:00:00")),
@@ -174,7 +212,7 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
     Scenario("Only update some fields") { fixture =>
       Given("user request to edit a task belongs to him or her")
       val request = EditTask.Request(
-        fixture.loggedInUser, fixture.task3UUID,
+        fixture.loggedInUser, fixture.task3.uuid,
         description = Some("NewDescription"),
       )
 
@@ -183,7 +221,7 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
 
       Then("the task in storage should only has description updated")
       val expectedTask = Task(
-        fixture.task3UUID, fixture.loggedInUser.uuid,
+        fixture.task3.uuid, fixture.loggedInUser.uuid,
         description = "NewDescription",
         note = fixture.task3.note,
         project = fixture.task3.project,

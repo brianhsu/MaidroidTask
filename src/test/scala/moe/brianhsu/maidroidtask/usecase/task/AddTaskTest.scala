@@ -10,18 +10,15 @@ import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 import scala.util.Try
 
 class AddTaskFixture extends BaseFixture {
-  val uuidInSystem = UUID.fromString("ba2d0314-c049-48cb-99db-b068ceeb4a41")
-  val tagUUID = UUID.fromString("89729cb6-bea5-4912-b433-8a38ab2afe59")
-  val otherUserTagUUID = UUID.fromString("f8c222ac-bf8d-4267-9f1a-b610dcf1c7f6")
 
   private val fixtureCreateTime = LocalDateTime.parse("2020-07-30T11:12:13")
 
-  tagRepo.write.insert(Tag(tagUUID, loggedInUser.uuid, "ExistTag", None, isTrashed = false, generator.currentTime, generator.currentTime))
-  tagRepo.write.insert(Tag(otherUserTagUUID, otherUser.uuid, "OtherUserTag", None, isTrashed = false, generator.currentTime, generator.currentTime))
+  val userTag = tagRepo.write.insert(Tag(UUID.randomUUID, loggedInUser.uuid, "ExistTag", None, isTrashed = false, generator.currentTime, generator.currentTime))
+  val otherUserTag = tagRepo.write.insert(Tag(UUID.randomUUID, otherUser.uuid, "OtherUserTag", None, isTrashed = false, generator.currentTime, generator.currentTime))
 
-  taskRepo.write.insert(
+  val userTask = taskRepo.write.insert(
     Task(
-      uuidInSystem, loggedInUser.uuid, "Description",
+      UUID.randomUUID, loggedInUser.uuid, "Description",
       createTime = fixtureCreateTime,
       updateTime = fixtureCreateTime
     )
@@ -44,7 +41,7 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
 
     Scenario("Validation failed because UUID collision") { fixture =>
       Given("we request to add a task with UUID that already in system")
-      val request = AddTask.Request(fixture.loggedInUser, fixture.uuidInSystem, "Description")
+      val request = AddTask.Request(fixture.loggedInUser, fixture.userTask.uuid, "Description")
 
       When("run the use case")
       val (response, _) = fixture.run(request)
@@ -71,7 +68,7 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
     Scenario("Some tags UUID no exist") { fixture =>
       Given("user request to add a task with a non-exist tag UUID")
       val nonExistTagUUID = UUID.randomUUID()
-      val tagsList = List(fixture.tagUUID, nonExistTagUUID)
+      val tagsList = List(fixture.userTag.uuid, nonExistTagUUID)
       val request = AddTask.Request(fixture.loggedInUser, UUID.randomUUID, "Task", tags = tagsList)
 
       When("run the use case")
@@ -85,7 +82,7 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
 
     Scenario("Some tags UUID belongs to others") { fixture =>
       Given("user request to add a task with a tag UUID belongs to others")
-      val tagsList = List(fixture.tagUUID, fixture.otherUserTagUUID)
+      val tagsList = List(fixture.userTag.uuid, fixture.otherUserTag.uuid)
       val request = AddTask.Request(fixture.loggedInUser, UUID.randomUUID, "Task", tags = tagsList)
 
       When("run the use case")
@@ -113,7 +110,7 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
     Scenario("Validation failed because the depended task not exist") { fixture =>
       Given("we request to add a task that depends on a non-exist task UUID")
       val nonExistUUID = UUID.fromString("13482407-9977-40d6-a3e8-7fb73de682c4")
-      val taskDependsOn = List(nonExistUUID, fixture.uuidInSystem)
+      val taskDependsOn = List(nonExistUUID, fixture.userTask.uuid)
       val request = AddTask.Request(fixture.loggedInUser, UUID.randomUUID, "Description", dependsOn = taskDependsOn)
 
       When("run the use case")
@@ -127,8 +124,8 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
 
     Scenario("Validation passed") { fixture =>
       Given("we request to add a task with all fields except project, tags")
-      val taskDependsOn = List(fixture.uuidInSystem)
-      val tagsList = List(fixture.tagUUID)
+      val taskDependsOn = List(fixture.userTask.uuid)
+      val tagsList = List(fixture.userTag.uuid)
       val request = AddTask.Request(
         fixture.loggedInUser,
         UUID.randomUUID,
@@ -159,9 +156,9 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
     info("As a user, I would like to add a single task to system.")
     Scenario("Add task to storage") { fixture =>
       Given("we request to add a task with correct fields")
-      val taskDependsOn = List(fixture.uuidInSystem)
+      val taskDependsOn = List(fixture.userTask.uuid)
       val taskUUID = UUID.randomUUID
-      val tagsList = List(fixture.tagUUID)
+      val tagsList = List(fixture.userTag.uuid)
       val request = AddTask.Request(
         fixture.loggedInUser, taskUUID, "Description",
         note = Some("Note"),

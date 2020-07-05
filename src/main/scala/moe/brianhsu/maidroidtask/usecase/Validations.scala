@@ -13,6 +13,7 @@ object Validations {
   case object Duplicated extends ErrorDescription
   case object Required extends ErrorDescription
   case object NotFound extends ErrorDescription
+  case object HasChildren extends ErrorDescription
 
 }
 

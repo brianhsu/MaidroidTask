@@ -21,6 +21,7 @@ class AddTag(request: AddTag.Request)(implicit tagRepo: TagRepo, generator: Dyna
   private val tag = Tag(
     request.uuid, request.loggedInUser.uuid,
     request.name, request.parentTagUUID,
+    isTrashed = false,
     currentTime, currentTime
   )
   override def doAction(): Tag = {

@@ -5,7 +5,7 @@ import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{InsertLog, Journal, Priority, ScheduledAt, Task, User}
 import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
-import moe.brianhsu.maidroidtask.gateway.repo.{ReadableRepo, TaskRepo}
+import moe.brianhsu.maidroidtask.gateway.repo.{UserBasedReadable, TaskRepo}
 import moe.brianhsu.maidroidtask.usecase.UseCase
 import moe.brianhsu.maidroidtask.usecase.Validations.{Duplicated, ErrorDescription, NotFound, Required, ValidationRules}
 import moe.brianhsu.maidroidtask.usecase.task.AddTask.Request
@@ -46,7 +46,7 @@ class AddTask(request: Request)(implicit val taskRepo: TaskRepo, generator: Dyna
 
   override def validations: List[ValidationRules] = {
 
-    implicit val readable: ReadableRepo[Task] = taskRepo.read
+    implicit val readable: UserBasedReadable[Task] = taskRepo.read
 
     groupByField(
       createValidator("uuid", request.uuid, EntityValidator.noCollision[Task]),

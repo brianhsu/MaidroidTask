@@ -10,7 +10,7 @@ trait TaskRepo {
   def read: TaskReadable
   def write: TaskWriteable
 
-  trait TaskReadable extends ReadableRepo[Task] {
+  trait TaskReadable extends UserBasedReadable[Task] {
     override def findByUUID(uuid: UUID): Option[Task]
   }
 

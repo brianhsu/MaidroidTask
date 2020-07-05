@@ -6,5 +6,6 @@ import java.util.UUID
 case class Tag(uuid: UUID, userUUID: UUID,
                name: String,
                parentTagUUID: Option[UUID],
+               isTrashed: Boolean = false,
                createTime: LocalDateTime,
                updateTime: LocalDateTime) extends EntityWithUserId

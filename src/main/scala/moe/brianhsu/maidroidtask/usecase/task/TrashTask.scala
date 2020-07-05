@@ -4,7 +4,7 @@ import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Journal, Task, TrashLog, User}
 import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
-import moe.brianhsu.maidroidtask.gateway.repo.{ReadableRepo, TaskRepo}
+import moe.brianhsu.maidroidtask.gateway.repo.{UserBasedReadable, TaskRepo}
 import moe.brianhsu.maidroidtask.usecase.UseCase
 import moe.brianhsu.maidroidtask.usecase.Validations.{Duplicated, ValidationRules}
 import moe.brianhsu.maidroidtask.usecase.validator.EntityValidator
@@ -37,7 +37,7 @@ class TrashTask(request: TrashTask.Request)(implicit taskRepo: TaskRepo, generat
   ).toList
 
   override def validations: List[ValidationRules] = {
-    implicit val readable: ReadableRepo[Task] = taskRepo.read
+    implicit val readable: UserBasedReadable[Task] = taskRepo.read
 
     groupByField(
       createValidator("uuid", request.uuid,

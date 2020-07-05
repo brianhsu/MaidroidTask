@@ -5,7 +5,7 @@ import org.scalatest.{GivenWhenThen, Inside, OptionValues, Outcome, TryValues}
 import org.scalatest.featurespec.FixtureAnyFeatureSpec
 import org.scalatest.matchers.should.Matchers
 
-trait BaseFixtureFeature[T] extends FixtureAnyFeatureSpec with GivenWhenThen with TryValues with Matchers with OptionValues with Inside {
+trait BaseFixtureFeature[T] extends FixtureAnyFeatureSpec with GivenWhenThen with TryValues with Matchers with OptionValues with Inside with ValidationMatchers {
   protected def createFixture: T
   override protected def withFixture(test: OneArgTest): Outcome = test(createFixture)
   override type FixtureParam = T

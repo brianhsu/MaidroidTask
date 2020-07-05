@@ -3,7 +3,6 @@ package moe.brianhsu.maidroidtask.gateway.repo
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.Tag
-import moe.brianhsu.maidroidtask.usecase.Validations
 
 trait TagRepo {
 

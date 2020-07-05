@@ -10,13 +10,22 @@ import moe.brianhsu.maidroidtask.usecase.Validations.{Duplicated, ErrorDescripti
 import moe.brianhsu.maidroidtask.usecase.validator.{EntityValidator, GenericValidator}
 
 object EditTag {
-  case class Request(loggedInUser: User, uuid: UUID, name: String)
+  case class Request(loggedInUser: User,
+                     uuid: UUID,
+                     name: Option[String] = None,
+                     parentTagUUID: Option[Option[UUID]] = None)
 }
 
 class EditTag(request: EditTag.Request)(implicit tagRepo: TagRepo, generator: DynamicDataGenerator) extends UseCase[Tag] {
   private lazy val updatedTag = tagRepo.read
     .findByUUID(request.uuid)
-    .map(_.copy(name = request.name, updateTime = generator.currentTime))
+    .map { tag =>
+      tag.copy(
+        name = request.name.getOrElse(tag.name),
+        parentTagUUID = request.parentTagUUID.getOrElse(tag.parentTagUUID),
+        updateTime = generator.currentTime
+      )
+    }
 
   override def doAction(): Tag = {
     updatedTag.foreach(tag => tagRepo.write.update(request.uuid, tag))
@@ -46,8 +55,12 @@ class EditTag(request: EditTag.Request)(implicit tagRepo: TagRepo, generator: Dy
         EntityValidator.belongToUser[Tag]((request.loggedInUser))
       ),
       createValidator("name", request.name,
-        GenericValidator.notEmpty,
-        noSameNameForSameUser(request.loggedInUser)
+        GenericValidator.ifAssigned(GenericValidator.notEmpty),
+        GenericValidator.ifAssigned(noSameNameForSameUser(request.loggedInUser))
+      ),
+      createValidator("parentTagUUID", request.parentTagUUID,
+        GenericValidator.ifAssigned(GenericValidator.ifAssigned(EntityValidator.exist[Tag])),
+        GenericValidator.ifAssigned(GenericValidator.ifAssigned(EntityValidator.belongToUser[Tag](request.loggedInUser)))
       )
     )
   }

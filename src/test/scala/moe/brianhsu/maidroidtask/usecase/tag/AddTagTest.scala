@@ -3,15 +3,17 @@ package moe.brianhsu.maidroidtask.usecase.tag
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{InsertLog, Journal, Tag}
-import moe.brianhsu.maidroidtask.usecase.Validations.{Duplicated, FailedValidation, Required, ValidationErrors}
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, FailedValidation, NotFound, Required, ValidationErrors}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 import scala.util.Try
 
 class AddTagFixture extends BaseFixture {
   val uuidInSystem = UUID.fromString("fedc2a03-031c-4c3f-8e8d-176009f5928")
+  val otherUserTagUUID = UUID.fromString("8d077394-7e32-4e86-a721-b14bd004f2a8")
 
-  tagRepo.write.insert(Tag(uuidInSystem, loggedInUser.uuid, "ExistTag", generator.currentTime, generator.currentTime))
+  tagRepo.write.insert(Tag(uuidInSystem, loggedInUser.uuid, "ExistTag", None, generator.currentTime, generator.currentTime))
+  tagRepo.write.insert(Tag(otherUserTagUUID, otherUser.uuid, "OtherUserTag", None, generator.currentTime, generator.currentTime))
 
   def run(request: AddTag.Request): (Try[Tag], List[Journal]) = {
     val useCase = new AddTag(request)
@@ -53,6 +55,39 @@ class AddTagTest extends BaseFixtureFeature[AddTagFixture] {
       exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("name", Required))
     }
 
+    Scenario("the parent tag UUID is not exist") { fixture =>
+      Given("user request to add a tag that the parent tag UUID is not exist")
+      val nonExistParentUUID = UUID.fromString("d0729388-7b51-48b9-a671-6b985ad4ae65")
+      val request = AddTag.Request(
+        fixture.loggedInUser, fixture.generator.randomUUID,
+        "ChildTag", Some(nonExistParentUUID)
+      )
+
+      When("run the use case")
+      val (response, _) = fixture.run(request)
+
+      Then("it should NOT pass validation and yield NotFound error")
+      val exception = response.failure.exception
+      exception shouldBe a[ValidationErrors]
+      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("parentTagUUID", NotFound))
+    }
+
+    Scenario("the parent tag UUID is belongs to others") { fixture =>
+      Given("user request to add a tag depends on other users tag")
+      val request = AddTag.Request(
+        fixture.loggedInUser, fixture.generator.randomUUID,
+        "ChildTag", Some(fixture.otherUserTagUUID)
+      )
+
+      When("run the use case")
+      val (response, _) = fixture.run(request)
+
+      Then("it should NOT pass validation and yield NotFound error")
+      val exception = response.failure.exception
+      exception shouldBe a[ValidationErrors]
+      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("parentTagUUID", AccessDenied))
+    }
+
     Scenario("Validation passed") { fixture =>
       Given("user request to add tag with non-empty name")
       val request = AddTag.Request(fixture.loggedInUser, fixture.generator.randomUUID, "TagName")
@@ -73,17 +108,19 @@ class AddTagTest extends BaseFixtureFeature[AddTagFixture] {
     Scenario("Add to storage") { fixture =>
       Given("user request to add tag")
       val newTagUUID = fixture.generator.randomUUID
-      val request = AddTag.Request(fixture.loggedInUser, newTagUUID, "TagName")
+      val parentTagUUID = Some(fixture.uuidInSystem)
+      val request = AddTag.Request(fixture.loggedInUser, newTagUUID, "TagName", parentTagUUID)
 
       When("run the use case")
       val (response, journals) = fixture.run(request)
 
       Then("the returned tag should contains correct information")
       val returnedTag = response.success.value
-      inside(returnedTag) { case Tag(uuid, userUUID, name, createTime, updateTime) =>
+      inside(returnedTag) { case Tag(uuid, userUUID, name, parentTagUUID, createTime, updateTime) =>
         uuid shouldBe request.uuid
         userUUID shouldBe request.loggedInUser.uuid
         name shouldBe request.name
+        parentTagUUID.value shouldBe fixture.uuidInSystem
         createTime shouldBe fixture.generator.currentTime
         updateTime shouldBe fixture.generator.currentTime
       }

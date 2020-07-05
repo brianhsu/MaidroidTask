@@ -10,12 +10,19 @@ import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
 import moe.brianhsu.maidroidtask.usecase.validator.{EntityValidator, GenericValidator}
 
 object AddTag {
-  case class Request(loggedInUser: User, uuid: UUID, name: String)
+  case class Request(loggedInUser: User,
+                     uuid: UUID,
+                     name: String,
+                     parentTagUUID: Option[UUID] = None)
 }
 
 class AddTag(request: AddTag.Request)(implicit tagRepo: TagRepo, generator: DynamicDataGenerator) extends UseCase[Tag] {
   private val currentTime = generator.currentTime
-  private val tag = Tag(request.uuid, request.loggedInUser.uuid, request.name, currentTime, currentTime)
+  private val tag = Tag(
+    request.uuid, request.loggedInUser.uuid,
+    request.name, request.parentTagUUID,
+    currentTime, currentTime
+  )
   override def doAction(): Tag = {
     tagRepo.write.insert(tag)
     tag
@@ -34,7 +41,12 @@ class AddTag(request: AddTag.Request)(implicit tagRepo: TagRepo, generator: Dyna
     implicit val tagReadable = tagRepo.read
     groupByField(
       createValidator("uuid", request.uuid, EntityValidator.noCollision[Tag]),
-      createValidator("name", request.name, GenericValidator.notEmpty)
+      createValidator("name", request.name, GenericValidator.notEmpty),
+      createValidator(
+        "parentTagUUID", request.parentTagUUID,
+        GenericValidator.ifAssigned(EntityValidator.exist[Tag]),
+        GenericValidator.ifAssigned(EntityValidator.belongToUser[Tag](request.loggedInUser))
+      )
     )
   }
 }

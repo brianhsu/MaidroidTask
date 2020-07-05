@@ -12,7 +12,18 @@ import moe.brianhsu.maidroidtask.usecase.task.AddTask.Request
 import moe.brianhsu.maidroidtask.usecase.validator.{GenericValidator, EntityValidator}
 
 object AddTask {
-  case class Request(loggedInUser: User, uuid: UUID, description: String, note: Option[String] = None, project: Option[UUID] = None, tags: List[UUID] = Nil, dependsOn: List[UUID] = Nil, priority: Option[Priority] = None, waitUntil: Option[LocalDateTime] = None, due: Option[LocalDateTime] = None, scheduledAt: Option[ScheduledAt] = None, isDone: Boolean = false)
+  case class Request(loggedInUser: User,
+                     uuid: UUID,
+                     description: String,
+                     note: Option[String] = None,
+                     project: Option[UUID] = None,
+                     tags: List[UUID] = Nil,
+                     dependsOn: List[UUID] = Nil,
+                     priority: Option[Priority] = None,
+                     waitUntil: Option[LocalDateTime] = None,
+                     due: Option[LocalDateTime] = None,
+                     scheduledAt: Option[ScheduledAt] = None,
+                     isDone: Boolean = false)
 }
 
 class AddTask(request: Request)(implicit val taskRepo: TaskRepo, generator: DynamicDataGenerator) extends UseCase[Task] {

@@ -12,8 +12,8 @@ class AddTagFixture extends BaseFixture {
   val uuidInSystem = UUID.fromString("fedc2a03-031c-4c3f-8e8d-176009f5928")
   val otherUserTagUUID = UUID.fromString("8d077394-7e32-4e86-a721-b14bd004f2a8")
 
-  tagRepo.write.insert(Tag(uuidInSystem, loggedInUser.uuid, "ExistTag", None, generator.currentTime, generator.currentTime))
-  tagRepo.write.insert(Tag(otherUserTagUUID, otherUser.uuid, "OtherUserTag", None, generator.currentTime, generator.currentTime))
+  tagRepo.write.insert(Tag(uuidInSystem, loggedInUser.uuid, "ExistTag", None, isTrashed = false, generator.currentTime, generator.currentTime))
+  tagRepo.write.insert(Tag(otherUserTagUUID, otherUser.uuid, "OtherUserTag", None, isTrashed = false, generator.currentTime, generator.currentTime))
 
   def run(request: AddTag.Request): (Try[Tag], List[Journal]) = {
     val useCase = new AddTag(request)
@@ -116,11 +116,12 @@ class AddTagTest extends BaseFixtureFeature[AddTagFixture] {
 
       Then("the returned tag should contains correct information")
       val returnedTag = response.success.value
-      inside(returnedTag) { case Tag(uuid, userUUID, name, parentTagUUID, createTime, updateTime) =>
+      inside(returnedTag) { case Tag(uuid, userUUID, name, parentTagUUID, isDeleted, createTime, updateTime) =>
         uuid shouldBe request.uuid
         userUUID shouldBe request.loggedInUser.uuid
         name shouldBe request.name
         parentTagUUID.value shouldBe fixture.uuidInSystem
+        isDeleted shouldBe false
         createTime shouldBe fixture.generator.currentTime
         updateTime shouldBe fixture.generator.currentTime
       }

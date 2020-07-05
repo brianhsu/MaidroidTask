@@ -3,15 +3,21 @@ package moe.brianhsu.maidroidtask.usecase.task
 import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{InsertLog, Journal, P1, ScheduledAt, Task}
-import moe.brianhsu.maidroidtask.usecase.Validations.{Duplicated, FailedValidation, NotFound, Required, ValidationErrors}
+import moe.brianhsu.maidroidtask.entity.{InsertLog, Journal, P1, ScheduledAt, Tag, Task}
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, FailedValidation, NotFound, Required, ValidationErrors}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 import scala.util.Try
 
 class AddTaskFixture extends BaseFixture {
   val uuidInSystem = UUID.fromString("ba2d0314-c049-48cb-99db-b068ceeb4a41")
+  val tagUUID = UUID.fromString("89729cb6-bea5-4912-b433-8a38ab2afe59")
+  val otherUserTagUUID = UUID.fromString("f8c222ac-bf8d-4267-9f1a-b610dcf1c7f6")
+
   private val fixtureCreateTime = LocalDateTime.parse("2020-07-30T11:12:13")
+
+  tagRepo.write.insert(Tag(tagUUID, loggedInUser.uuid, "ExistTag", None, isTrashed = false, generator.currentTime, generator.currentTime))
+  tagRepo.write.insert(Tag(otherUserTagUUID, otherUser.uuid, "OtherUserTag", None, isTrashed = false, generator.currentTime, generator.currentTime))
 
   taskRepo.write.insert(
     Task(
@@ -62,6 +68,35 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
       exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("description", Required))
     }
 
+    Scenario("Some tags UUID no exist") { fixture =>
+      Given("user request to add a task with a non-exist tag UUID")
+      val nonExistTagUUID = UUID.randomUUID()
+      val tagsList = List(fixture.tagUUID, nonExistTagUUID)
+      val request = AddTask.Request(fixture.loggedInUser, UUID.randomUUID, "Task", tags = tagsList)
+
+      When("run the use case")
+      val (response, _) = fixture.run(request)
+
+      Then("it shouldn't pass the  and yield NotFound error")
+      val exception = response.failure.exception
+      exception shouldBe a [ValidationErrors]
+      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("tags", NotFound))
+    }
+
+    Scenario("Some tags UUID belongs to others") { fixture =>
+      Given("user request to add a task with a tag UUID belongs to others")
+      val tagsList = List(fixture.tagUUID, fixture.otherUserTagUUID)
+      val request = AddTask.Request(fixture.loggedInUser, UUID.randomUUID, "Task", tags = tagsList)
+
+      When("run the use case")
+      val (response, _) = fixture.run(request)
+
+      Then("it shouldn't pass the  and yield NotFound error")
+      val exception = response.failure.exception
+      exception shouldBe a [ValidationErrors]
+      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("tags", AccessDenied))
+    }
+
     Scenario("Validation failed because we provide description that is basically empty") { fixture =>
       Given("we request to add a task that only consist of space, tab, newline")
       val request = AddTask.Request(fixture.loggedInUser, UUID.randomUUID, "    \t   \n  ")
@@ -93,12 +128,24 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
     Scenario("Validation passed") { fixture =>
       Given("we request to add a task with all fields except project, tags")
       val taskDependsOn = List(fixture.uuidInSystem)
-      val request = AddTask.Request(fixture.loggedInUser, UUID.randomUUID, "Description", note = Some("Note"), dependsOn = taskDependsOn, priority = Some(P1), waitUntil = Some(LocalDateTime.parse("2020-07-30T10:11:12")), due = Some(LocalDateTime.parse("2020-08-30T10:00:00")), scheduledAt = Some(
-                ScheduledAt(
-                  LocalDate.parse("2020-08-11"),
-                  Some(LocalTime.parse("23:44:45"))
-                )
-              ))
+      val tagsList = List(fixture.tagUUID)
+      val request = AddTask.Request(
+        fixture.loggedInUser,
+        UUID.randomUUID,
+        "Description",
+        note = Some("Note"),
+        dependsOn = taskDependsOn,
+        priority = Some(P1),
+        waitUntil = Some(LocalDateTime.parse("2020-07-30T10:11:12")),
+        due = Some(LocalDateTime.parse("2020-08-30T10:00:00")),
+        tags = tagsList,
+        scheduledAt = Some(
+          ScheduledAt(
+            LocalDate.parse("2020-08-11"),
+            Some(LocalTime.parse("23:44:45"))
+          )
+        )
+      )
 
       When("run the use case")
       val (response, _) = fixture.run(request)
@@ -114,10 +161,12 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
       Given("we request to add a task with correct fields")
       val taskDependsOn = List(fixture.uuidInSystem)
       val taskUUID = UUID.randomUUID
+      val tagsList = List(fixture.tagUUID)
       val request = AddTask.Request(
         fixture.loggedInUser, taskUUID, "Description",
         note = Some("Note"),
         dependsOn = taskDependsOn,
+        tags = tagsList,
         priority = Some(P1),
         waitUntil = Some(LocalDateTime.parse("2020-07-30T10:11:12")),
         due = Some(LocalDateTime.parse("2020-08-30T10:00:00")),

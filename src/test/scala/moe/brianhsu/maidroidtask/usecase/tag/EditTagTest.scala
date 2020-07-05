@@ -18,9 +18,9 @@ class EditTagFixture extends BaseFixture {
 
   val fixtureCreateTime = LocalDateTime.now
 
-  tagRepo.write.insert(Tag(otherUserTagUUID, otherUser.uuid, otherUserTagName, None, fixtureCreateTime, fixtureCreateTime))
-  tagRepo.write.insert(Tag(tag1UUID, loggedInUser.uuid, "UserTag", None, fixtureCreateTime, fixtureCreateTime))
-  tagRepo.write.insert(Tag(tag2UUID, loggedInUser.uuid, existTagName, None, fixtureCreateTime, fixtureCreateTime))
+  tagRepo.write.insert(Tag(otherUserTagUUID, otherUser.uuid, otherUserTagName, None, isTrashed = false, fixtureCreateTime, fixtureCreateTime))
+  tagRepo.write.insert(Tag(tag1UUID, loggedInUser.uuid, "UserTag", None, isTrashed = false, fixtureCreateTime, fixtureCreateTime))
+  tagRepo.write.insert(Tag(tag2UUID, loggedInUser.uuid, existTagName, None, isTrashed = false, fixtureCreateTime, fixtureCreateTime))
 
   def run(request: EditTag.Request): (Try[Tag], List[Journal]) = {
     val useCase = new EditTag(request)
@@ -148,11 +148,12 @@ class EditTagTest extends BaseFixtureFeature[EditTagFixture] {
 
       Then("it should return edited tag contains updated information")
       val returnedTag = response.success.value
-      inside(returnedTag) { case Tag(uuid, userUUID, name, parentTagUUID, createTime, updateTime) =>
+      inside(returnedTag) { case Tag(uuid, userUUID, name, parentTagUUID, isDeleted, createTime, updateTime) =>
         uuid shouldBe request.uuid
         userUUID shouldBe request.loggedInUser.uuid
         name shouldBe "SomeNewName"
         parentTagUUID shouldBe None
+        isDeleted shouldBe false
         createTime shouldBe fixture.fixtureCreateTime
         updateTime shouldBe fixture.generator.currentTime
       }
@@ -183,10 +184,11 @@ class EditTagTest extends BaseFixtureFeature[EditTagFixture] {
 
       Then("it should return edited tag contains updated information")
       val returnedTag = response.success.value
-      inside(returnedTag) { case Tag(uuid, userUUID, name, parentTagUUID, createTime, updateTime) =>
+      inside(returnedTag) { case Tag(uuid, userUUID, name, parentTagUUID, isDeleted, createTime, updateTime) =>
         uuid shouldBe request.uuid
         userUUID shouldBe request.loggedInUser.uuid
         name shouldBe "UserTag"
+        isDeleted shouldBe false
         parentTagUUID shouldBe Some(fixture.tag2UUID)
         createTime shouldBe fixture.fixtureCreateTime
         updateTime shouldBe fixture.generator.currentTime

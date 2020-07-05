@@ -61,9 +61,7 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
       val (response, _) = fixture.run(request)
 
       Then("it should NOT pass the validation and yield NotFound error")
-      val exception = response.failure.exception
-      exception shouldBe a[ValidationErrors]
-      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("uuid", NotFound))
+      response should containsFailedValidation("uuid", NotFound)
     }
 
     Scenario("Edit task that belong to other user") { fixture =>
@@ -74,9 +72,7 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
       val (response, _) = fixture.run(request)
 
       Then("it should NOT pass the validation and yield AccessDenied error")
-      val exception = response.failure.exception
-      exception shouldBe a[ValidationErrors]
-      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("uuid", AccessDenied))
+      response should containsFailedValidation("uuid", AccessDenied)
     }
 
     Scenario("Edit task that new task depends on non-exist task") { fixture =>
@@ -88,9 +84,7 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
       val (response, _) = fixture.run(request)
 
       Then("it should NOT pass the validation, and yield NotFound error")
-      val exception = response.failure.exception
-      exception shouldBe a[ValidationErrors]
-      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("dependsOn", NotFound))
+      response should containsFailedValidation("dependsOn", NotFound)
     }
 
     Scenario("Edit task that title is empty") { fixture =>
@@ -101,9 +95,7 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
       val (response, _) = fixture.run(request)
 
       Then("it should NOT pass the validation and yield Required error")
-      val exception = response.failure.exception
-      exception shouldBe a[ValidationErrors]
-      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("description", Required))
+      response should containsFailedValidation("description", Required)
     }
 
     Scenario("Edit task that new tags has non-exist tag UUID") { fixture =>
@@ -120,9 +112,7 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
       val (response, _) = fixture.run(request)
 
       Then("is should NOT pass the validation and yield NotFound error")
-      val exception = response.failure.exception
-      exception shouldBe a[ValidationErrors]
-      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("tags", NotFound))
+      response should containsFailedValidation("tags", NotFound)
     }
 
     Scenario("Edit task that new tags belongs to other user") { fixture =>
@@ -138,11 +128,8 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
       val (response, _) = fixture.run(request)
 
       Then("is should NOT pass the validation and yield NotFound error")
-      val exception = response.failure.exception
-      exception shouldBe a[ValidationErrors]
-      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("tags", AccessDenied))
+      response should containsFailedValidation("tags", AccessDenied)
     }
-
   }
 
   Feature("Update task in system") {

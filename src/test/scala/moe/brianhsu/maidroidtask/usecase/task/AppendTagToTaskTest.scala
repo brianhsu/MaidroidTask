@@ -33,7 +33,7 @@ class AppendTagToTaskTest extends BaseFixtureFeature[AppendTagToTaskFixture] {
       val (response, _) = fixture.run(request)
 
       Then("it should NOT pass the validation, and yield NotFound error")
-      response shouldBe failedValidation("uuid", NotFound)
+      response should containsFailedValidation("uuid", NotFound)
     }
 
     Scenario("Append non-exist tag to task") { fxiture =>
@@ -63,12 +63,6 @@ class AppendTagToTaskTest extends BaseFixtureFeature[AppendTagToTaskFixture] {
       Then("it should pass the validation")
       pending
     }
-  }
-
-  private def aaa(response: Try[Task]) = {
-    val exception = response.failure.exception
-    exception shouldBe a[ValidationErrors]
-    exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("task", NotFound))
   }
 
   Feature("Add tag to a task") {

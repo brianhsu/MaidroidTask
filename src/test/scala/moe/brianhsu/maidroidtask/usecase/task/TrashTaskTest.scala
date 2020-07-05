@@ -41,9 +41,7 @@ class TrashTaskTest extends BaseFixtureFeature[TrashTaskFixture] {
       val (response, _) = fixture.run(request)
 
       Then("it should NOT pass the validation")
-      val exception = response.failure.exception
-      exception shouldBe a[ValidationErrors]
-      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("uuid", NotFound))
+      response should containsFailedValidation("uuid", NotFound)
     }
 
     Scenario("Delete task does not belong to the logged in user") { fixture =>
@@ -54,9 +52,7 @@ class TrashTaskTest extends BaseFixtureFeature[TrashTaskFixture] {
       val (response, _) = fixture.run(request)
 
       Then("it should NOT pass the validation")
-      val exception = response.failure.exception
-      exception shouldBe a[ValidationErrors]
-      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("uuid", AccessDenied))
+      response should containsFailedValidation("uuid", AccessDenied)
     }
 
   }

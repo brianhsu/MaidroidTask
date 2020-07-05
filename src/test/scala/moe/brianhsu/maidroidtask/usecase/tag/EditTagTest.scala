@@ -42,9 +42,7 @@ class EditTagTest extends BaseFixtureFeature[EditTagFixture] {
       val (response, _) = fixture.run(request)
 
       Then("it should NOT pass the validation, and yield NotFound error")
-      val exception = response.failure.exception
-      exception shouldBe a[ValidationErrors]
-      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("uuid", NotFound))
+      response should containsFailedValidation("uuid", NotFound)
     }
 
     Scenario("Edit a tag that belongs to others") { fixture =>
@@ -55,9 +53,7 @@ class EditTagTest extends BaseFixtureFeature[EditTagFixture] {
       val (response, _) = fixture.run(request)
 
       Then("it should NOT pass the validation, and yield AccessDenied error")
-      val exception = response.failure.exception
-      exception shouldBe a[ValidationErrors]
-      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("uuid", AccessDenied))
+      response should containsFailedValidation("uuid", AccessDenied)
     }
 
     Scenario("Edit a tag with new name contains only spaces, tabs and newlines") { fixture =>
@@ -68,9 +64,7 @@ class EditTagTest extends BaseFixtureFeature[EditTagFixture] {
       val (response, _) = fixture.run(request)
 
       Then("it should NOT pass the validation, and yield Required error")
-      val exception = response.failure.exception
-      exception shouldBe a[ValidationErrors]
-      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("name", Required))
+      response should containsFailedValidation("name", Required)
     }
 
     Scenario("Edit a tag, and name has duplication in system with same user") { fixture =>
@@ -81,9 +75,8 @@ class EditTagTest extends BaseFixtureFeature[EditTagFixture] {
       val (response, _) = fixture.run(request)
 
       Then("it should NOT pass the validation, and yield Duplicate error")
-      val exception = response.failure.exception
-      exception shouldBe a[ValidationErrors]
-      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("name", Duplicated))
+      response should containsFailedValidation("name", Duplicated)
+
     }
 
     Scenario("the parent tag UUID is not exist") { fixture =>
@@ -95,9 +88,7 @@ class EditTagTest extends BaseFixtureFeature[EditTagFixture] {
       val (response, _) = fixture.run(request)
 
       Then("it should NOT pass validation and yield NotFound error")
-      val exception = response.failure.exception
-      exception shouldBe a[ValidationErrors]
-      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("parentTagUUID", NotFound))
+      response should containsFailedValidation("parentTagUUID", NotFound)
     }
 
     Scenario("the parent tag UUID is belongs to other user") { fixture =>
@@ -108,9 +99,7 @@ class EditTagTest extends BaseFixtureFeature[EditTagFixture] {
       val (response, _) = fixture.run(request)
 
       Then("it should NOT pass validation and yield NotFound error")
-      val exception = response.failure.exception
-      exception shouldBe a[ValidationErrors]
-      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("parentTagUUID", AccessDenied))
+      response should containsFailedValidation("parentTagUUID", AccessDenied)
     }
 
     Scenario("Edit a tag, and name has duplication in system with other user") { fixture =>
@@ -206,6 +195,5 @@ class EditTagTest extends BaseFixtureFeature[EditTagFixture] {
         )
       )
     }
-
   }
 }

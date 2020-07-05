@@ -37,9 +37,7 @@ class AddTagTest extends BaseFixtureFeature[AddTagFixture] {
       val (response, _) = fixture.run(request)
 
       Then("it should NOT pass validation and yield Duplicated error")
-      val exception = response.failure.exception
-      exception shouldBe a[ValidationErrors]
-      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("uuid", Duplicated))
+      response should containsFailedValidation("uuid", Duplicated)
     }
 
     Scenario("the tag name is empty") { fixture =>
@@ -50,9 +48,7 @@ class AddTagTest extends BaseFixtureFeature[AddTagFixture] {
       val (response, _) = fixture.run(request)
 
       Then("it should NOT pass validation and yield Required error")
-      val exception = response.failure.exception
-      exception shouldBe a[ValidationErrors]
-      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("name", Required))
+      response should containsFailedValidation("name", Required)
     }
 
     Scenario("the parent tag UUID is not exist") { fixture =>
@@ -67,9 +63,7 @@ class AddTagTest extends BaseFixtureFeature[AddTagFixture] {
       val (response, _) = fixture.run(request)
 
       Then("it should NOT pass validation and yield NotFound error")
-      val exception = response.failure.exception
-      exception shouldBe a[ValidationErrors]
-      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("parentTagUUID", NotFound))
+      response should containsFailedValidation("parentTagUUID", NotFound)
     }
 
     Scenario("the parent tag UUID is belongs to others") { fixture =>
@@ -83,9 +77,7 @@ class AddTagTest extends BaseFixtureFeature[AddTagFixture] {
       val (response, _) = fixture.run(request)
 
       Then("it should NOT pass validation and yield NotFound error")
-      val exception = response.failure.exception
-      exception shouldBe a[ValidationErrors]
-      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("parentTagUUID", AccessDenied))
+      response should containsFailedValidation("parentTagUUID", AccessDenied)
     }
 
     Scenario("Validation passed") { fixture =>

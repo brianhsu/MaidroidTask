@@ -47,9 +47,7 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
       val (response, _) = fixture.run(request)
 
       Then("it shouldn't pass the validation")
-      val exception = response.failure.exception
-      exception shouldBe a [ValidationErrors]
-      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("uuid",Duplicated))
+      response should containsFailedValidation("uuid",Duplicated)
     }
 
     Scenario("Validation failed because we don't provide description") { fixture =>
@@ -60,9 +58,7 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
       val (response, _) = fixture.run(request)
 
       Then("it shouldn't pass the validation")
-      val exception = response.failure.exception
-      exception shouldBe a [ValidationErrors]
-      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("description", Required))
+      response should containsFailedValidation("description", Required)
     }
 
     Scenario("Some tags UUID no exist") { fixture =>
@@ -75,9 +71,7 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
       val (response, _) = fixture.run(request)
 
       Then("it shouldn't pass the  and yield NotFound error")
-      val exception = response.failure.exception
-      exception shouldBe a [ValidationErrors]
-      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("tags", NotFound))
+      response should containsFailedValidation("tags", NotFound)
     }
 
     Scenario("Some tags UUID belongs to others") { fixture =>
@@ -89,9 +83,7 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
       val (response, _) = fixture.run(request)
 
       Then("it shouldn't pass the  and yield NotFound error")
-      val exception = response.failure.exception
-      exception shouldBe a [ValidationErrors]
-      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("tags", AccessDenied))
+      response should containsFailedValidation("tags", AccessDenied)
     }
 
     Scenario("Validation failed because we provide description that is basically empty") { fixture =>
@@ -102,9 +94,7 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
       val (response, _) = fixture.run(request)
 
       Then("it shouldn't pass the validation")
-      val exception = response.failure.exception
-      exception shouldBe a [ValidationErrors]
-      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("description", Required))
+      response should containsFailedValidation("description", Required)
     }
 
     Scenario("Validation failed because the depended task not exist") { fixture =>
@@ -117,9 +107,7 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
       val (response, _) = fixture.run(request)
 
       Then("it shouldn't pass the validation")
-      val exception = response.failure.exception
-      exception shouldBe a [ValidationErrors]
-      exception.asInstanceOf[ValidationErrors].failedValidations shouldBe List(FailedValidation("dependsOn", NotFound))
+      response should containsFailedValidation("dependsOn", NotFound)
     }
 
     Scenario("Validation passed") { fixture =>

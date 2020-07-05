@@ -42,6 +42,7 @@ class EditTag(request: EditTag.Request)(implicit tagRepo: TagRepo, generator: Dy
   override def validations: List[ValidationRules] = {
 
     implicit val read: tagRepo.TagReadable = tagRepo.read
+    import GenericValidator.option
 
     def noSameNameForSameUser(loggedInUser: User)(name: String): Option[ErrorDescription] = {
       val tagsOfLoggedInUSer = tagRepo.read.listByUserUUID(loggedInUser.uuid)
@@ -55,12 +56,12 @@ class EditTag(request: EditTag.Request)(implicit tagRepo: TagRepo, generator: Dy
         EntityValidator.belongToUser[Tag]((request.loggedInUser))
       ),
       createValidator("name", request.name,
-        GenericValidator.ifAssigned(GenericValidator.notEmpty),
-        GenericValidator.ifAssigned(noSameNameForSameUser(request.loggedInUser))
+        option(GenericValidator.notEmpty),
+        option(noSameNameForSameUser(request.loggedInUser))
       ),
       createValidator("parentTagUUID", request.parentTagUUID,
-        GenericValidator.ifAssigned(GenericValidator.ifAssigned(EntityValidator.exist[Tag])),
-        GenericValidator.ifAssigned(GenericValidator.ifAssigned(EntityValidator.belongToUser[Tag](request.loggedInUser)))
+        option(option(EntityValidator.exist[Tag])),
+        option(option(EntityValidator.belongToUser[Tag](request.loggedInUser)))
       )
     )
   }

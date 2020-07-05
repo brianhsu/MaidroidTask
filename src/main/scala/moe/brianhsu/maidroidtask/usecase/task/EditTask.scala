@@ -52,14 +52,15 @@ class EditTask(request: EditTask.Request)(implicit taskRepo: TaskRepo, generator
 
   override def validations: List[ValidationRules] = {
     implicit val readable: ReadableRepo[Task] = taskRepo.read
+    import GenericValidator.option
 
     groupByField(
       createValidator("uuid", request.uuid,
         EntityValidator.exist[Task],
         EntityValidator.belongToUser[Task](request.loggedInUser)
       ),
-      createValidator("description", request.description, GenericValidator.ifAssigned(GenericValidator.notEmpty)),
-      createValidator("dependsOn", request.dependsOn, GenericValidator.ifAssigned(EntityValidator.allExist[Task]))
+      createValidator("description", request.description, option(GenericValidator.notEmpty)),
+      createValidator("dependsOn", request.dependsOn, option(EntityValidator.allExist[Task]))
 
     )
   }

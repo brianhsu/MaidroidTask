@@ -39,13 +39,15 @@ class AddTag(request: AddTag.Request)(implicit tagRepo: TagRepo, generator: Dyna
 
   override def validations: List[ValidationRules] = {
     implicit val tagReadable = tagRepo.read
+    import GenericValidator.option
+
     groupByField(
       createValidator("uuid", request.uuid, EntityValidator.noCollision[Tag]),
       createValidator("name", request.name, GenericValidator.notEmpty),
       createValidator(
         "parentTagUUID", request.parentTagUUID,
-        GenericValidator.ifAssigned(EntityValidator.exist[Tag]),
-        GenericValidator.ifAssigned(EntityValidator.belongToUser[Tag](request.loggedInUser))
+        option(EntityValidator.exist[Tag]),
+        option(EntityValidator.belongToUser[Tag](request.loggedInUser))
       )
     )
   }

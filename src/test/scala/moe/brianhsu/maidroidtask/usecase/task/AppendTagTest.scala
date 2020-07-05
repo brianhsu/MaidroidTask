@@ -3,35 +3,20 @@ package moe.brianhsu.maidroidtask.usecase.task
 import java.time.LocalDateTime
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Journal, Tag, Task, UpdateLog}
-import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, FailedValidation, NotFound, ValidationErrors}
+import moe.brianhsu.maidroidtask.entity.{Journal, Task, UpdateLog}
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, NotFound}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 import scala.util.Try
 
 class AppendTagToTaskFixture extends BaseFixture {
-  val fixtureCreateTime = LocalDateTime.parse("2020-07-30T11:12:13")
+  val userTag1 = createTag(loggedInUser, "ExistTag 1")
+  val userTag2 = createTag(loggedInUser, "ExistTag 2")
+  val userTag3 = createTag(loggedInUser, "ExistTag 3")
+  val otherUserTag = createTag(otherUser, "OtherUserTag")
 
-  val userTag1 = tagRepo.write.insert(Tag(UUID.randomUUID, loggedInUser.uuid, "ExistTag 1", None, isTrashed = false, generator.currentTime, generator.currentTime))
-  val userTag2 = tagRepo.write.insert(Tag(UUID.randomUUID, loggedInUser.uuid, "ExistTag 2", None, isTrashed = false, generator.currentTime, generator.currentTime))
-  val userTag3 = tagRepo.write.insert(Tag(UUID.randomUUID, loggedInUser.uuid, "ExistTag 3", None, isTrashed = false, generator.currentTime, generator.currentTime))
-
-  val otherUserTag = tagRepo.write.insert(Tag(UUID.randomUUID, otherUser.uuid, "OtherUserTag", None, isTrashed = false, generator.currentTime, generator.currentTime))
-  val userTask = taskRepo.write.insert(
-    Task(
-      UUID.randomUUID, loggedInUser.uuid, "UserTask",
-      createTime = fixtureCreateTime,
-      updateTime = fixtureCreateTime
-    )
-  )
-
-  val otherUserTask = taskRepo.write.insert(
-    Task(
-      UUID.randomUUID, otherUser.uuid, "OtherUserTask",
-      createTime = fixtureCreateTime,
-      updateTime = fixtureCreateTime
-    )
-  )
+  val userTask = createTask(loggedInUser, "UserTask")
+  val otherUserTask = createTask(otherUser, "OtherUserTask")
 
   def run(request: AppendTag.Request): (Try[Task], List[Journal]) = {
     val useCase = new AppendTag(request)
@@ -135,15 +120,7 @@ class AppendTagTest extends BaseFixtureFeature[AppendTagToTaskFixture] {
     Scenario("Append a tag to a task with some tags") { fixture =>
       Given("a task that has several tags")
       val tagsUUIDList = List(fixture.userTag1.uuid, fixture.userTag2.uuid)
-      val task = fixture.taskRepo.write.insert(
-        Task(
-          UUID.randomUUID, fixture.loggedInUser.uuid,
-          "OtherUserTask",
-          tags = tagsUUIDList,
-          createTime = fixture.fixtureCreateTime,
-          updateTime = fixture.fixtureCreateTime
-        )
-      )
+      val task = fixture.createTask(fixture.loggedInUser, "SomeTask", tagsUUIDList)
 
       And("user request to append another tag into it")
       val request = AppendTag.Request(fixture.loggedInUser, task.uuid, fixture.userTag3.uuid)

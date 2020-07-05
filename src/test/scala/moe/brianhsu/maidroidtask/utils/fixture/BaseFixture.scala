@@ -3,7 +3,7 @@ package moe.brianhsu.maidroidtask.utils.fixture
 import java.time.LocalDateTime
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.User
+import moe.brianhsu.maidroidtask.entity.{Tag, Task, User}
 import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
 import moe.brianhsu.maidroidtask.gateway.repo.{TagRepo, TaskRepo}
 import moe.brianhsu.maidroidtask.gateway.repo.memory.{InMemoryData, InMemoryTagRepo, InMemoryTaskRepo}
@@ -24,5 +24,17 @@ class BaseFixture {
 
   val loggedInUser: User = User(UUID.randomUUID(), "user@example.com", "UserName")
   val otherUser: User = User(UUID.randomUUID(), "other@example.com", "OtherUser")
+
+  def createTag(user: User, name: String) = tagRepo.write.insert(Tag(UUID.randomUUID, user.uuid, name, None, isTrashed = false, LocalDateTime.now, LocalDateTime.now))
+  def createTask(user: User, description: String, tags: List[UUID] = Nil) = {
+    taskRepo.write.insert(
+      Task(
+        UUID.randomUUID, user.uuid, description,
+        tags = tags,
+        createTime = LocalDateTime.now,
+        updateTime = LocalDateTime.now
+      )
+    )
+  }
 
 }

@@ -3,12 +3,10 @@ package moe.brianhsu.maidroidtask.usecase.task
 import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{P1, ScheduledAt, Tag, Task, UpdateLog}
+import moe.brianhsu.maidroidtask.entity.{ScheduledAt, Tag, Task, UpdateLog}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, NotFound, Required}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
-
-import scala.util.Try
 
 class EditTaskFixture extends BaseFixture {
 
@@ -26,7 +24,6 @@ class EditTaskFixture extends BaseFixture {
       project = Some(UUID.randomUUID()),
       tags = List(UUID.randomUUID(), UUID.randomUUID()),
       dependsOn = List(task2.uuid),
-      priority = Some(P1),
       waitUntil = Some(LocalDateTime.parse("2020-09-30T11:11:11")),
       due = Some(LocalDateTime.parse("2030-01-12T12:33:11")),
       scheduledAt = Some(ScheduledAt(LocalDate.parse("2020-01-11"), None)),
@@ -143,7 +140,6 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
         note = Some(Some("Note")),
         dependsOn = Some(taskDependsOn),
         tags = Some(newTagsList),
-        priority = Some(Some(P1)),
         waitUntil = Some(Some(LocalDateTime.parse("2020-07-30T10:11:12"))),
         due = Some(Some(LocalDateTime.parse("2020-08-30T10:00:00"))),
         scheduledAt = Some(
@@ -167,7 +163,6 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
         note = Some("Note"),
         dependsOn = taskDependsOn,
         tags = newTagsList,
-        priority = Some(P1),
         waitUntil = Some(LocalDateTime.parse("2020-07-30T10:11:12")),
         due = Some(LocalDateTime.parse("2020-08-30T10:00:00")),
         scheduledAt = Some(
@@ -214,7 +209,6 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
         project = fixture.task3.project,
         tags = fixture.task3.tags,
         dependsOn = fixture.task3.dependsOn,
-        priority = fixture.task3.priority,
         waitUntil = fixture.task3.waitUntil,
         due = fixture.task3.due,
         scheduledAt = fixture.task3.scheduledAt,

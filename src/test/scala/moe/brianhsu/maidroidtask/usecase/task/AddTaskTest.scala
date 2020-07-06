@@ -3,12 +3,10 @@ package moe.brianhsu.maidroidtask.usecase.task
 import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{InsertLog, P1, ScheduledAt, Tag, Task}
+import moe.brianhsu.maidroidtask.entity.{InsertLog, ScheduledAt, Tag, Task}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, NotFound, Required}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
-
-import scala.util.Try
 
 class AddTaskFixture extends BaseFixture {
 
@@ -121,7 +119,6 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
         "Description",
         note = Some("Note"),
         dependsOn = taskDependsOn,
-        priority = Some(P1),
         waitUntil = Some(LocalDateTime.parse("2020-07-30T10:11:12")),
         due = Some(LocalDateTime.parse("2020-08-30T10:00:00")),
         tags = tagsList,
@@ -153,7 +150,6 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
         note = Some("Note"),
         dependsOn = taskDependsOn,
         tags = tagsList,
-        priority = Some(P1),
         waitUntil = Some(LocalDateTime.parse("2020-07-30T10:11:12")),
         due = Some(LocalDateTime.parse("2020-08-30T10:00:00")),
         scheduledAt = Some(
@@ -181,7 +177,6 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
         project = request.project,
         tags = request.tags,
         dependsOn = request.dependsOn,
-        priority = request.priority,
         waitUntil = request.waitUntil,
         due = request.due,
         scheduledAt = request.scheduledAt,

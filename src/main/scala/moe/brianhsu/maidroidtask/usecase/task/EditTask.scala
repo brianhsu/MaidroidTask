@@ -3,7 +3,7 @@ package moe.brianhsu.maidroidtask.usecase.task
 import java.time.LocalDateTime
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Journal, Priority, ScheduledAt, Tag, Task, UpdateLog, User}
+import moe.brianhsu.maidroidtask.entity.{Journal, ScheduledAt, Tag, Task, UpdateLog, User}
 import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
 import moe.brianhsu.maidroidtask.gateway.repo.{TagRepo, TaskRepo, Readable}
 import moe.brianhsu.maidroidtask.usecase.UseCase
@@ -17,7 +17,6 @@ object EditTask {
                      project: Option[Option[UUID]] = None,
                      tags: Option[List[UUID]] = None,
                      dependsOn: Option[List[UUID]] = None,
-                     priority: Option[Option[Priority]] = None,
                      waitUntil: Option[Option[LocalDateTime]] = None,
                      due: Option[Option[LocalDateTime]] = None,
                      scheduledAt: Option[Option[ScheduledAt]] = None,
@@ -32,7 +31,6 @@ class EditTask(request: EditTask.Request)(implicit taskRepo: TaskRepo, tagRepo: 
       project = request.project.getOrElse(task.project),
       tags = request.tags.getOrElse(task.tags),
       dependsOn = request.dependsOn.getOrElse(task.dependsOn),
-      priority = request.priority.getOrElse(task.priority),
       waitUntil = request.waitUntil.getOrElse(task.waitUntil),
       due = request.due.getOrElse(task.due),
       scheduledAt = request.scheduledAt.getOrElse(task.scheduledAt),

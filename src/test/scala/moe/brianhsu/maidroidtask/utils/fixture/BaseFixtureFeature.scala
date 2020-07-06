@@ -12,7 +12,7 @@ trait BaseFixtureFeature[T] extends FixtureAnyFeatureSpec with GivenWhenThen wit
 
   def isSameTask(task: Task, expectedTask: Task) = {
     inside(task) { case Task(uuid, userUUID, description, note, project, tags,
-    dependsOn, priority, waitUntil, due, scheduledAt,
+    dependsOn, waitUntil, due, scheduledAt,
     isDone, isTrashed, createTime, updateTime) =>
 
       uuid shouldBe expectedTask.uuid
@@ -22,7 +22,6 @@ trait BaseFixtureFeature[T] extends FixtureAnyFeatureSpec with GivenWhenThen wit
       project shouldBe expectedTask.project
       tags shouldBe expectedTask.tags
       dependsOn shouldBe expectedTask.dependsOn
-      priority shouldBe expectedTask.priority
       waitUntil shouldBe expectedTask.waitUntil
       due shouldBe expectedTask.due
       scheduledAt shouldBe expectedTask.scheduledAt

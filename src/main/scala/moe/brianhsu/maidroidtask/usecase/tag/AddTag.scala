@@ -5,7 +5,7 @@ import java.util.UUID
 import moe.brianhsu.maidroidtask.entity.{InsertLog, Journal, Tag, User}
 import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
 import moe.brianhsu.maidroidtask.gateway.repo.TagRepo
-import moe.brianhsu.maidroidtask.usecase.UseCase
+import moe.brianhsu.maidroidtask.usecase.{UseCase, validator}
 import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
 import moe.brianhsu.maidroidtask.usecase.validator.{EntityValidator, GenericValidator}
 
@@ -44,7 +44,10 @@ class AddTag(request: AddTag.Request)(implicit tagRepo: TagRepo, generator: Dyna
 
     groupByField(
       createValidator("uuid", request.uuid, EntityValidator.noCollision[Tag]),
-      createValidator("name", request.name, GenericValidator.notEmpty),
+      createValidator("name", request.name,
+        GenericValidator.notEmpty,
+        EntityValidator.noSameNameForSameUser[Tag](request.loggedInUser)
+      ),
       createValidator(
         "parentTagUUID", request.parentTagUUID,
         option(EntityValidator.exist[Tag]),

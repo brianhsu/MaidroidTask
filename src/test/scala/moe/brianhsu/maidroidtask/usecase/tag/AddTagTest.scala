@@ -80,6 +80,36 @@ class AddTagTest extends BaseFixtureFeature[AddTagFixture] {
       response should containsFailedValidation("parentTagUUID", AccessDenied)
     }
 
+    Scenario("There are same tag name in system for logged in user") { fixture =>
+      Given("user request to add tag that has duplicate name in system")
+      val request = AddTag.Request(
+        fixture.loggedInUser,
+        fixture.generator.randomUUID,
+        "ExistTag"
+      )
+
+      When("run the use case")
+      val (response, _) = fixture.run(request)
+
+      Then("it should NOT pass validation and yield Duplicate error")
+      response should containsFailedValidation("name", Duplicated)
+    }
+
+    Scenario("There are same tag name in system for other user") { fixture =>
+      Given("user request to add tag that has duplicate name in system, but belongs to other user")
+      val request = AddTag.Request(
+        fixture.loggedInUser,
+        fixture.generator.randomUUID,
+        "OtherUserTag"
+      )
+
+      When("run the use case")
+      val (response, _) = fixture.run(request)
+
+      Then("it should NOT pass validation and yield Duplicate error")
+      response.success.value shouldBe a[Tag]
+    }
+
     Scenario("Validation passed") { fixture =>
       Given("user request to add tag with non-empty name")
       val request = AddTag.Request(fixture.loggedInUser, fixture.generator.randomUUID, "TagName")
@@ -88,8 +118,7 @@ class AddTagTest extends BaseFixtureFeature[AddTagFixture] {
       val (response, _) = fixture.run(request)
 
       Then("it should pass the validation")
-      val tag = response.success.value
-      tag shouldBe a[Tag]
+      response.success.value shouldBe a[Tag]
     }
   }
 

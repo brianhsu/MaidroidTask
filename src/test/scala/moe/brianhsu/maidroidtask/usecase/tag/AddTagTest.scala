@@ -110,6 +110,24 @@ class AddTagTest extends BaseFixtureFeature[AddTagFixture] {
       response.success.value shouldBe a[Tag]
     }
 
+    Scenario("There is same tag name, but has been delete") { fixture =>
+      Given("user has a deleted tag")
+      val deletedTag = fixture.createTag(fixture.loggedInUser, "TagName", isTrashed = true)
+
+      And("user request to add a tag has same name")
+      val request = AddTag.Request(
+        fixture.loggedInUser,
+        fixture.generator.randomUUID,
+        "TagName"
+      )
+
+      When("run the use case")
+      val (response, _) = fixture.run(request)
+
+      Then("it should pass the validation")
+      response.success.value shouldBe a[Tag]
+    }
+
     Scenario("Validation passed") { fixture =>
       Given("user request to add tag with non-empty name")
       val request = AddTag.Request(fixture.loggedInUser, fixture.generator.randomUUID, "TagName")

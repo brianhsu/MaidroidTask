@@ -8,4 +8,5 @@ trait EntityWithUserId extends Entity {
 }
 trait NamedEntity extends Entity {
   def name: String
+  def isTrashed: Boolean
 }

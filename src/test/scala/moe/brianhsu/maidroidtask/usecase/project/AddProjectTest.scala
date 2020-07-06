@@ -99,6 +99,18 @@ class AddProjectTest extends BaseFixtureFeature[AddProjectFixture] {
       response.success.value shouldBe a[Project]
     }
 
+    Scenario("Add project with duplicate name of logged user's trahsed project") { fixture =>
+      Given("user request to add a project has duplicate name with other user's project")
+      val trashedProject = fixture.createProject(fixture.loggedInUser, "Some Project Name", isTrashed = true)
+      val request = AddProject.Request(fixture.loggedInUser, UUID.randomUUID, "Some Project Name")
+
+      When("run the use case")
+      val (response, _) = fixture.run(request)
+
+      Then("it should pass the validation")
+      response.success.value shouldBe a[Project]
+    }
+
     Scenario("Validation passed") { fixture =>
       Given("user request to add a project that is valid")
       val request = AddProject.Request(fixture.loggedInUser, UUID.randomUUID, "Some Project Name")

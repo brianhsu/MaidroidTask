@@ -53,7 +53,7 @@ object EntityValidator {
 
   def noSameNameForSameUser[T <: NamedEntity](loggedInUser: User)(name: String)(implicit readable: UserBasedReadable[T]): Option[ErrorDescription] = {
     val entityOfUser = readable.listByUserUUID(loggedInUser.uuid)
-    val hasDuplicate = entityOfUser.exists(_.name == name)
+    val hasDuplicate = entityOfUser.exists(e => e.name == name && !e.isTrashed)
     if (hasDuplicate) Some(Duplicated) else None
   }
 

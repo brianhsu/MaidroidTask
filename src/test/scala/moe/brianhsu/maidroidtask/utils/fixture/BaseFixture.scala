@@ -5,8 +5,8 @@ import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Project, Tag, Task, User}
 import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
-import moe.brianhsu.maidroidtask.gateway.repo.{TagRepo, TaskRepo}
-import moe.brianhsu.maidroidtask.gateway.repo.memory.{InMemoryData, InMemoryTagRepo, InMemoryTaskRepo}
+import moe.brianhsu.maidroidtask.gateway.repo.{ProjectRepo, TagRepo, TaskRepo}
+import moe.brianhsu.maidroidtask.gateway.repo.memory.{InMemoryData, InMemoryProjectRepo, InMemoryTagRepo, InMemoryTaskRepo}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutor
 
 class BaseFixture {
@@ -21,6 +21,7 @@ class BaseFixture {
   implicit val useCaseExecutor: UseCaseExecutor = new UseCaseExecutor
   implicit val taskRepo: TaskRepo = new InMemoryTaskRepo(inMemoryData)
   implicit val tagRepo: TagRepo = new InMemoryTagRepo(inMemoryData)
+  implicit val projectRepo: ProjectRepo = new InMemoryProjectRepo(inMemoryData)
 
   val loggedInUser: User = User(UUID.randomUUID(), "user@example.com", "UserName")
   val otherUser: User = User(UUID.randomUUID(), "other@example.com", "OtherUser")
@@ -36,14 +37,16 @@ class BaseFixture {
       )
     )
   }
-  def createProject(user: User, name: String) = {
+  def createProject(user: User, name: String) = projectRepo.write.insert(
     Project(
       UUID.randomUUID, user.uuid, name,
+      note = None,
       parentProjectUUID = None,
-      isTrashed = false, Project.Active,
+      isTrashed = false,
+      status = Project.Active,
       createTime = LocalDateTime.now,
       updateTime = LocalDateTime.now
     )
-  }
+  )
 
 }

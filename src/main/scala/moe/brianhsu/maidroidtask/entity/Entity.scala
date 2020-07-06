@@ -6,3 +6,6 @@ trait Entity
 trait EntityWithUserId extends Entity {
   def userUUID: UUID
 }
+trait NamedEntity extends Entity {
+  def name: String
+}

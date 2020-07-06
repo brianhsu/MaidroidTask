@@ -12,8 +12,9 @@ object Project {
 
 case class Project(uuid: UUID, userUUID: UUID,
                    name: String,
+                   note: Option[String],
                    parentProjectUUID: Option[UUID],
-                   isTrashed: Boolean,
                    status: Project.Status,
+                   isTrashed: Boolean,
                    createTime: LocalDateTime,
-                   updateTime: LocalDateTime)
+                   updateTime: LocalDateTime) extends EntityWithUserId with NamedEntity

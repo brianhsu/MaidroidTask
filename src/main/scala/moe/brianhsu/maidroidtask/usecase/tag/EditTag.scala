@@ -6,7 +6,7 @@ import moe.brianhsu.maidroidtask.entity.{Journal, Tag, UpdateLog, User}
 import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
 import moe.brianhsu.maidroidtask.gateway.repo.TagRepo
 import moe.brianhsu.maidroidtask.usecase.UseCase
-import moe.brianhsu.maidroidtask.usecase.Validations.{Duplicated, ErrorDescription, ValidationRules}
+import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
 import moe.brianhsu.maidroidtask.usecase.validator.{EntityValidator, GenericValidator}
 
 object EditTag {
@@ -41,14 +41,9 @@ class EditTag(request: EditTag.Request)(implicit tagRepo: TagRepo, generator: Dy
   
   override def validations: List[ValidationRules] = {
 
-    implicit val read: tagRepo.TagReadable = tagRepo.read
-    import GenericValidator.option
+    implicit val read = tagRepo.read
 
-    def noSameNameForSameUser(loggedInUser: User)(name: String): Option[ErrorDescription] = {
-      val tagsOfLoggedInUSer = tagRepo.read.listByUserUUID(loggedInUser.uuid)
-      val hasDuplicate = tagsOfLoggedInUSer.exists(_.name == name)
-      if (hasDuplicate) Some(Duplicated) else None
-    }
+    import GenericValidator.option
 
     groupByField(
       createValidator("uuid", request.uuid,
@@ -57,7 +52,7 @@ class EditTag(request: EditTag.Request)(implicit tagRepo: TagRepo, generator: Dy
       ),
       createValidator("name", request.name,
         option(GenericValidator.notEmpty),
-        option(noSameNameForSameUser(request.loggedInUser))
+        option(EntityValidator.noSameNameForSameUser[Tag](request.loggedInUser))
       ),
       createValidator("parentTagUUID", request.parentTagUUID,
         option(option(EntityValidator.exist[Tag])),

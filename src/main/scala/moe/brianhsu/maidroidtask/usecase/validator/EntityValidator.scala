@@ -2,8 +2,8 @@ package moe.brianhsu.maidroidtask.usecase.validator
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{EntityWithUserId, User}
-import moe.brianhsu.maidroidtask.gateway.repo.Readable
+import moe.brianhsu.maidroidtask.entity.{EntityWithUserId, NamedEntity, User}
+import moe.brianhsu.maidroidtask.gateway.repo.{Readable, UserBasedReadable}
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, ErrorDescription, NotFound}
 
 object EntityValidator {
@@ -49,6 +49,12 @@ object EntityValidator {
       case Some(userUUID) if userUUID != loggedInUser.uuid => Some(AccessDenied)
       case _ => None
     }
+  }
+
+  def noSameNameForSameUser[T <: NamedEntity](loggedInUser: User)(name: String)(implicit readable: UserBasedReadable[T]): Option[ErrorDescription] = {
+    val tagsOfLoggedInUSer = readable.listByUserUUID(loggedInUser.uuid)
+    val hasDuplicate = tagsOfLoggedInUSer.exists(_.name == name)
+    if (hasDuplicate) Some(Duplicated) else None
   }
 
 }

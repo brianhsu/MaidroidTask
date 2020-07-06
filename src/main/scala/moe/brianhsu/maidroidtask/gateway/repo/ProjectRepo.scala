@@ -6,6 +6,6 @@ trait ProjectRepo {
   def read: ProjectReadable
   def write: ProjectWritable
 
-  trait ProjectReadable extends Readable[Project] with ParentChildReadable[Project]
+  trait ProjectReadable extends Readable[Project] with ParentChildReadable[Project] with UserBasedReadable[Project]
   trait ProjectWritable extends Writable[Project]
 }

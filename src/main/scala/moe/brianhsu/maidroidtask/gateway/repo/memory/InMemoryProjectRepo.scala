@@ -15,6 +15,7 @@ class InMemoryProjectRepo(data: InMemoryData) extends ProjectRepo {
   class InMemoryProjectReadable extends ProjectReadable {
     override def findByUUID(uuid: UUID): Option[Project] = uuidToProject.get(uuid)
     override def hasChildren(uuid: UUID): Boolean = data.uuidToProject.values.exists(project => project.parentProjectUUID.contains(uuid))
+    override def listByUserUUID(userUUID: UUID): List[Project] = data.uuidToProject.values.filter(_.userUUID == userUUID).toList
   }
 
   class InMemoryProjectWrite extends ProjectWritable {

@@ -2,7 +2,8 @@ package moe.brianhsu.maidroidtask.usecase.project
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Journal, Project, User}
+import moe.brianhsu.maidroidtask.entity.{InsertLog, Journal, Project, User}
+import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
 import moe.brianhsu.maidroidtask.gateway.repo.ProjectRepo
 import moe.brianhsu.maidroidtask.usecase.{UseCase, validator}
 import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
@@ -17,10 +18,27 @@ object AddProject {
                      status: Project.Status = Project.Active)
 }
 
-class AddProject(request: AddProject.Request)(implicit projectRepo: ProjectRepo) extends UseCase[Project] {
-  override def doAction(): Project = null
+class AddProject(request: AddProject.Request)(implicit projectRepo: ProjectRepo, generator: DynamicDataGenerator) extends UseCase[Project] {
 
-  override def journals: List[Journal] = Nil
+  private lazy val project = Project(
+    request.uuid, request.loggedInUser.uuid,
+    request.name, request.note, request.parentProjectUUID,
+    request.status, isTrashed = false,
+    createTime = generator.currentTime,
+    updateTime = generator.currentTime
+  )
+
+  override def doAction(): Project = {
+    projectRepo.write.insert(project)
+    project
+  }
+
+  override def journals: List[Journal] = List(
+    InsertLog(
+      generator.randomUUID, request.loggedInUser.uuid,
+      request.uuid, project, generator.currentTime
+    )
+  )
 
   override def validations: List[ValidationRules] = {
 

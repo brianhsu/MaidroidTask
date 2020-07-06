@@ -13,5 +13,7 @@ trait TaskRepo {
   trait TaskReadable extends Readable[Task]
   trait TaskWriteable extends Writable[Task] {
     def appendTag(uuid: UUID, tagUUID: UUID, updateTime: LocalDateTime): Task
+    def removeTag(uuid: UUID, tagUUID: UUID, updateTime: LocalDateTime): Task
+
   }
 }

@@ -96,8 +96,8 @@ class RemoveTagTest extends BaseFixtureFeature[RemoveTagFixture] {
       val request = RemoveTag.Request(fixture.loggedInUser, task.uuid, fixture.userTag1.uuid)
 
       Then("it should returned the task untouched")
-      val (response, journals) = fixture.run(request)
-      val returnedTask = response.success.value
+      val response = fixture.run(request)
+      val returnedTask = response.result.success.value
       returnedTask shouldBe task
 
       And("the task in storage should not be changed")
@@ -105,7 +105,7 @@ class RemoveTagTest extends BaseFixtureFeature[RemoveTagFixture] {
       taskInStorage shouldBe task
 
       And("there shouldn't have any journal")
-      journals shouldBe Nil
+      response.journals shouldBe Nil
     }
 
     Scenario("Remove a tag from a task not does not have the target tag") { fixture =>
@@ -120,8 +120,8 @@ class RemoveTagTest extends BaseFixtureFeature[RemoveTagFixture] {
       val request = RemoveTag.Request(fixture.loggedInUser, task.uuid, targetTag.uuid)
 
       Then("it should returned the task untouched")
-      val (response, journals) = fixture.run(request)
-      val returnedTask = response.success.value
+      val response = fixture.run(request)
+      val returnedTask = response.result.success.value
       returnedTask shouldBe task
 
       And("the task in storage should not be changed")
@@ -129,7 +129,7 @@ class RemoveTagTest extends BaseFixtureFeature[RemoveTagFixture] {
       taskInStorage shouldBe task
 
       And("there shouldn't have any journal")
-      journals shouldBe Nil
+      response.journals shouldBe Nil
     }
 
     Scenario("Remove a tag from a task has the target tag") { fixture =>
@@ -144,8 +144,8 @@ class RemoveTagTest extends BaseFixtureFeature[RemoveTagFixture] {
       val request = RemoveTag.Request(fixture.loggedInUser, task.uuid, targetTag.uuid)
 
       Then("it should returned the task without the target task")
-      val (response, journals) = fixture.run(request)
-      val returnedTask = response.success.value
+      val response = fixture.run(request)
+      val returnedTask = response.result.success.value
       returnedTask.tags should contain theSameElementsAs List(fixture.userTag1.uuid, fixture.userTag2.uuid)
 
       And("the task in storage should be updated")

@@ -19,17 +19,11 @@ class RemoveTag(request: RemoveTag.Request)
 
   private lazy val oldTask = taskRepo.read.findByUUID(request.uuid)
   private lazy val shouldBeUpdated = oldTask.exists(_.tags.contains(request.tagUUID))
-  private lazy val updatedTask = oldTask.map { task =>
-    task.copy(
-      tags = task.tags.filterNot(_ == request.tagUUID),
-      updateTime = generator.currentTime
-    )
-  }
-  
+  private lazy val updatedTask = taskRepo.write.removeTag(request.uuid, request.tagUUID, generator.currentTime)
+
   override def doAction(): Task = {
     if (shouldBeUpdated) {
-      updatedTask.foreach { task => taskRepo.write.update(task.uuid, task) }
-      updatedTask.get
+      updatedTask
     } else {
       oldTask.get
     }

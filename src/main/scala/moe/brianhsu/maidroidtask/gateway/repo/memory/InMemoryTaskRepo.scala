@@ -37,6 +37,16 @@ class InMemoryTaskRepo(data: InMemoryData) extends TaskRepo {
       }.get
       update(uuid, updatedTask)
     }
+
+    override def removeTag(uuid: UUID, tagUUID: UUID, updateTime: LocalDateTime): Task = {
+      val updatedTask = uuidToTask.get(uuid).map { task =>
+        task.copy(
+          tags = task.tags.filterNot(_ == tagUUID),
+          updateTime = updateTime
+        )
+      }.get
+      update(uuid, updatedTask)
+    }
   }
 
 }

@@ -5,7 +5,7 @@ import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Journal, Priority, ScheduledAt, Tag, Task, UpdateLog, User}
 import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
-import moe.brianhsu.maidroidtask.gateway.repo.{TagRepo, TaskRepo, UserBasedReadable}
+import moe.brianhsu.maidroidtask.gateway.repo.{TagRepo, TaskRepo, Readable}
 import moe.brianhsu.maidroidtask.usecase.UseCase
 import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
 import moe.brianhsu.maidroidtask.usecase.validator.{EntityValidator, GenericValidator}
@@ -52,8 +52,8 @@ class EditTask(request: EditTask.Request)(implicit taskRepo: TaskRepo, tagRepo: 
 
   override def validations: List[ValidationRules] = {
 
-    implicit val readable: UserBasedReadable[Task] = taskRepo.read
-    implicit val tagReadable: UserBasedReadable[Tag] = tagRepo.read
+    implicit val readable: Readable[Task] = taskRepo.read
+    implicit val tagReadable: Readable[Tag] = tagRepo.read
 
     import GenericValidator.option
 

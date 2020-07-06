@@ -17,14 +17,14 @@ class InMemoryTaskRepo(data: InMemoryData) extends TaskRepo {
   }
 
   class InMemoryTaskRepoWrite extends TaskWriteable {
-    override def insert(task: Task): Task = {
-      uuidToTask += task.uuid -> task
-      task
+    override def insert(entity: Task): Task = {
+      uuidToTask += entity.uuid -> entity
+      entity
     }
 
-    override def update(uuid: UUID, updatedTask: Task): Task = {
-      uuidToTask += uuid -> updatedTask
-      updatedTask
+    override def update(uuid: UUID, entity: Task): Task = {
+      uuidToTask += uuid -> entity
+      entity
     }
   }
 

@@ -3,7 +3,7 @@ package moe.brianhsu.maidroidtask.utils.fixture
 import java.time.LocalDateTime
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Tag, Task, User}
+import moe.brianhsu.maidroidtask.entity.{Project, Tag, Task, User}
 import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
 import moe.brianhsu.maidroidtask.gateway.repo.{TagRepo, TaskRepo}
 import moe.brianhsu.maidroidtask.gateway.repo.memory.{InMemoryData, InMemoryTagRepo, InMemoryTaskRepo}
@@ -34,6 +34,15 @@ class BaseFixture {
         createTime = LocalDateTime.now,
         updateTime = LocalDateTime.now
       )
+    )
+  }
+  def createProject(user: User, name: String) = {
+    Project(
+      UUID.randomUUID, user.uuid, name,
+      parentProjectUUID = None,
+      isTrashed = false, Project.Active,
+      createTime = LocalDateTime.now,
+      updateTime = LocalDateTime.now
     )
   }
 

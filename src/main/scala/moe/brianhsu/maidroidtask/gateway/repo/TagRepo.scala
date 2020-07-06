@@ -1,24 +1,15 @@
 package moe.brianhsu.maidroidtask.gateway.repo
 
-import java.util.UUID
+import moe.brianhsu.maidroidtask.entity.{Project, Tag}
 
-import moe.brianhsu.maidroidtask.entity.Tag
+
 
 trait TagRepo {
-
 
   def read: TagReadable
   def write: TagWritable
 
-  trait TagReadable extends UserBasedReadable[Tag] with ParentChildReadble[Tag] {
-    override def findByUUID(uuid: UUID): Option[Tag]
-    override def hasChildren(uuid: UUID): Boolean
-    def listByUserUUID(userUUID: UUID): List[Tag]
-  }
-
-  trait TagWritable {
-    def update(uuid: UUID, updatedTag: Tag): Tag
-    def insert(tag: Tag): Tag
-  }
+  trait TagReadable extends Readable[Tag] with ParentChildReadable[Tag] with UserBasedReadable[Tag]
+  trait TagWritable extends Writable[Tag]
 
 }

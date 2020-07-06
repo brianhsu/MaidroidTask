@@ -19,14 +19,14 @@ class InMemoryTagRepo(data: InMemoryData) extends TagRepo {
   }
 
   class InMemoryTagWrite extends TagWritable {
-    override def insert(tag: Tag): Tag = {
-      uuidToTag += (tag.uuid -> tag)
-      tag
+    override def insert(entity: Tag): Tag = {
+      uuidToTag += (entity.uuid -> entity)
+      entity
     }
 
-    override def update(uuid: UUID, updatedTag: Tag): Tag = {
-      uuidToTag = uuidToTag.updated(uuid, updatedTag)
-      updatedTag
+    override def update(uuid: UUID, entity: Tag): Tag = {
+      uuidToTag = uuidToTag.updated(uuid, entity)
+      entity
     }
   }
 }

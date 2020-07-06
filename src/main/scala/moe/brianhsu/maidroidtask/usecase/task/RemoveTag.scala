@@ -2,7 +2,7 @@ package moe.brianhsu.maidroidtask.usecase.task
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Journal, Tag, Task, User}
+import moe.brianhsu.maidroidtask.entity.{Journal, Tag, Task, UpdateLog, User}
 import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
 import moe.brianhsu.maidroidtask.gateway.repo.{TagRepo, TaskRepo}
 import moe.brianhsu.maidroidtask.usecase.UseCase
@@ -32,7 +32,12 @@ class RemoveTag(request: RemoveTag.Request)
   override def journals: List[Journal] = {
 
     if (shouldBeUpdated) {
-      Nil
+      List(
+        UpdateLog(
+          generator.randomUUID, request.loggedInUser.uuid,
+          request.uuid, updatedTask,
+          generator.currentTime)
+      )
     } else {
       Nil
     }

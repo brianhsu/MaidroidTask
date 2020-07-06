@@ -3,12 +3,10 @@ package moe.brianhsu.maidroidtask.usecase.tag
 import java.time.LocalDateTime
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Journal, Tag, UpdateLog}
+import moe.brianhsu.maidroidtask.entity.{Tag, UpdateLog}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
-import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, FailedValidation, NotFound, Required, ValidationErrors}
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, NotFound, Required}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
-
-import scala.util.Try
 
 class EditTagFixture extends BaseFixture {
   val otherUserTagUUID = UUID.fromString("341342e6-ee4f-465d-ae7d-4f2f9d33448f")

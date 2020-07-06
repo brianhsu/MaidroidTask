@@ -3,12 +3,10 @@ package moe.brianhsu.maidroidtask.usecase.tag
 import java.time.LocalDateTime
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Journal, Tag, TrashLog}
+import moe.brianhsu.maidroidtask.entity.{Tag, TrashLog}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
-import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, FailedValidation, HasChildren, NotFound, ValidationErrors}
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, HasChildren, NotFound}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
-
-import scala.util.Try
 
 class TrashTagFixture extends BaseFixture {
 

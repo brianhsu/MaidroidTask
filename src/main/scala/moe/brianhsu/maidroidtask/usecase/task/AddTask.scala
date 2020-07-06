@@ -7,7 +7,7 @@ import moe.brianhsu.maidroidtask.entity.{InsertLog, Journal, Priority, Scheduled
 import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
 import moe.brianhsu.maidroidtask.gateway.repo.{TagRepo, TaskRepo, Readable}
 import moe.brianhsu.maidroidtask.usecase.UseCase
-import moe.brianhsu.maidroidtask.usecase.Validations.{Duplicated, ErrorDescription, NotFound, Required, ValidationRules}
+import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
 import moe.brianhsu.maidroidtask.usecase.task.AddTask.Request
 import moe.brianhsu.maidroidtask.usecase.validator.{EntityValidator, GenericValidator}
 

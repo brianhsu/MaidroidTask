@@ -2,9 +2,9 @@ package moe.brianhsu.maidroidtask.usecase.project
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{InsertLog, Journal, Project}
-import moe.brianhsu.maidroidtask.usecase.{UseCaseExecutor, UseCaseExecutorResult}
-import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, NotFound, Required, ValidationErrors}
+import moe.brianhsu.maidroidtask.entity.{InsertLog, Project}
+import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, NotFound, Required}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 class AddProjectFixture extends BaseFixture {

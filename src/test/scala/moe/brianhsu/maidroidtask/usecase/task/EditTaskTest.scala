@@ -3,9 +3,9 @@ package moe.brianhsu.maidroidtask.usecase.task
 import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Journal, P1, ScheduledAt, Tag, Task, UpdateLog}
+import moe.brianhsu.maidroidtask.entity.{P1, ScheduledAt, Tag, Task, UpdateLog}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
-import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, FailedValidation, NotFound, Required, ValidationErrors}
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, NotFound, Required}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 import scala.util.Try

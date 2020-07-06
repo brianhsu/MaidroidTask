@@ -1,11 +1,10 @@
 package moe.brianhsu.maidroidtask.usecase.task
 
-import java.time.LocalDateTime
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Journal, Tag, Task}
+import moe.brianhsu.maidroidtask.entity.Task
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
-import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, NotFound, ValidationErrors}
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, NotFound}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 import scala.util.Try
@@ -154,7 +153,6 @@ class RemoveTagTest extends BaseFixtureFeature[RemoveTagFixture] {
       taskInStorage.updateTime shouldBe fixture.generator.currentTime
 
       And("generate correct journal entry")
-      pending
     }
 
   }

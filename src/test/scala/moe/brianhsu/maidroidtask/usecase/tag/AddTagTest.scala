@@ -7,8 +7,6 @@ import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, FailedValidation, NotFound, Required, ValidationErrors}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
-import scala.util.Try
-
 class AddTagFixture extends BaseFixture {
   val uuidInSystem = UUID.fromString("fedc2a03-031c-4c3f-8e8d-176009f5928")
   val otherUserTagUUID = UUID.fromString("8d077394-7e32-4e86-a721-b14bd004f2a8")

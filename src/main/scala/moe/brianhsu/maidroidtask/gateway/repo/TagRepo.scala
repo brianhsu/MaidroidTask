@@ -1,6 +1,6 @@
 package moe.brianhsu.maidroidtask.gateway.repo
 
-import moe.brianhsu.maidroidtask.entity.{Project, Tag}
+import moe.brianhsu.maidroidtask.entity.Tag
 
 
 

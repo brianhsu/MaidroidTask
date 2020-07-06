@@ -4,6 +4,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Journal, Tag, TrashLog}
+import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, FailedValidation, HasChildren, NotFound, ValidationErrors}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
@@ -21,9 +22,9 @@ class TrashTagFixture extends BaseFixture {
   tagRepo.write.insert(parentTag)
   tagRepo.write.insert(childTag)
 
-  def run(request: TrashTag.Request): (Try[Tag], List[Journal]) = {
+  def run(request: TrashTag.Request): UseCaseExecutorResult[Tag] = {
     val useCase = new TrashTag(request)
-    (useCase.execute(), useCase.journals)
+    useCase.execute()
   }
 }
 
@@ -37,10 +38,10 @@ class TrashTagTest extends BaseFixtureFeature[TrashTagFixture] {
       val request = TrashTag.Request(fixture.loggedInUser, nonExistTagUUID)
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should NOT pass the validation and yield NotFound error")
-      response should containsFailedValidation("uuid", NotFound)
+      response.result should containsFailedValidation("uuid", NotFound)
     }
 
     Scenario("Trash tag belongs to others") { fixture =>
@@ -48,10 +49,10 @@ class TrashTagTest extends BaseFixtureFeature[TrashTagFixture] {
       val request = TrashTag.Request(fixture.loggedInUser, fixture.otherUserTag.uuid)
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should NOT pass the validation and yield AccessDenied error")
-      response should containsFailedValidation("uuid", AccessDenied)
+      response.result should containsFailedValidation("uuid", AccessDenied)
     }
 
     Scenario("Trash tag that has child tags") { fixture =>
@@ -59,10 +60,10 @@ class TrashTagTest extends BaseFixtureFeature[TrashTagFixture] {
       val request = TrashTag.Request(fixture.loggedInUser, fixture.parentTag.uuid)
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should NOT pass the validation and yield HasChildren error")
-      response should containsFailedValidation("uuid", HasChildren)
+      response.result should containsFailedValidation("uuid", HasChildren)
     }
 
     Scenario("Trash tag belongs to logged in user") { fixture =>
@@ -70,10 +71,10 @@ class TrashTagTest extends BaseFixtureFeature[TrashTagFixture] {
       val request = TrashTag.Request(fixture.loggedInUser, fixture.childTag.uuid)
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should pass the validation")
-      response.success.value shouldBe a[Tag]
+      response.result.success.value shouldBe a[Tag]
     }
   }
 
@@ -83,10 +84,10 @@ class TrashTagTest extends BaseFixtureFeature[TrashTagFixture] {
       val request = TrashTag.Request(fixture.loggedInUser, fixture.childTag.uuid)
 
       When("run the use case")
-      val (response, journals) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should returned trashed tag")
-      val returnedTag = response.success.value
+      val returnedTag = response.result.success.value
       inside(returnedTag) { case Tag(uuid, userUUID, name, parentTagUUID, isTrashed, createTime, updateTime) =>
         uuid shouldBe request.uuid
         userUUID shouldBe request.loggedInUser.uuid
@@ -102,7 +103,7 @@ class TrashTagTest extends BaseFixtureFeature[TrashTagFixture] {
       tagInStorage shouldBe returnedTag
 
       And("generate the correct journal entry")
-      journals shouldBe List(
+      response.journals shouldBe List(
         TrashLog(
           fixture.generator.randomUUID,
           request.loggedInUser.uuid,

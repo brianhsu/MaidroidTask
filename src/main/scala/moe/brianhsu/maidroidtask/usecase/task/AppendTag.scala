@@ -17,27 +17,19 @@ class AppendTag(request: AppendTag.Request)
                (implicit taskRepo: TaskRepo, tagRepo: TagRepo,
                 generator: DynamicDataGenerator) extends UseCase[Task] {
 
-  private lazy val updatedTask = taskRepo.read.findByUUID(request.uuid).map { task =>
-    task.copy(
-      tags = request.tagUUID :: task.tags,
-      updateTime = generator.currentTime
-    )
-  }
+  private lazy val updatedTask = taskRepo.write.appendTag(request.uuid, request.tagUUID, generator.currentTime)
 
-  override def doAction(): Task = {
-    updatedTask.foreach(task => taskRepo.write.update(task.uuid, task))
-    updatedTask.get
-  }
+  override def doAction(): Task = updatedTask
 
-  override def journals: List[Journal] = updatedTask.map { task =>
+  override def journals: List[Journal] = List(
     UpdateLog(
       generator.randomUUID,
       request.loggedInUser.uuid,
       request.uuid,
-      task,
+      updatedTask,
       generator.currentTime
     )
-  }.toList
+  )
 
   override def validations: List[ValidationRules] = {
     implicit val taskRead= taskRepo.read

@@ -4,6 +4,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Journal, Tag, Task}
+import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, NotFound, ValidationErrors}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
@@ -19,9 +20,9 @@ class RemoveTagFixture extends BaseFixture {
   val userTask = createTask(loggedInUser, "Task1")
   val otherUserTask = createTask(otherUser, "Other User Task")
 
-  def run(request: RemoveTag.Request): (Try[Task], List[Journal]) = {
+  def run(request: RemoveTag.Request): UseCaseExecutorResult[Task] = {
     val useCase = new RemoveTag(request)
-    (useCase.execute(), useCase.journals)
+    useCase.execute()
   }
 }
 class RemoveTagTest extends BaseFixtureFeature[RemoveTagFixture] {
@@ -34,10 +35,10 @@ class RemoveTagTest extends BaseFixtureFeature[RemoveTagFixture] {
       val request = RemoveTag.Request(fixture.loggedInUser, nonExistTaskUUID, fixture.userTag1.uuid)
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should not pass the validation, and yield NotFound error")
-      response should containsFailedValidation("uuid", NotFound)
+      response.result should containsFailedValidation("uuid", NotFound)
     }
 
     Scenario("Remove a non-exist tag from a task") { fixture =>
@@ -46,10 +47,10 @@ class RemoveTagTest extends BaseFixtureFeature[RemoveTagFixture] {
       val request = RemoveTag.Request(fixture.loggedInUser, fixture.userTask.uuid, nonExistTagUUID)
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should not pass the validation, and yield NotFound error")
-      response should containsFailedValidation("tagUUID", NotFound)
+      response.result should containsFailedValidation("tagUUID", NotFound)
     }
 
     Scenario("Remove a tag from other user's task") { fixture =>
@@ -57,10 +58,10 @@ class RemoveTagTest extends BaseFixtureFeature[RemoveTagFixture] {
       val request = RemoveTag.Request(fixture.loggedInUser, fixture.otherUserTask.uuid, fixture.userTag1.uuid)
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should not pass the validation, and yield AccessDenied error")
-      response should containsFailedValidation("uuid", AccessDenied)
+      response.result should containsFailedValidation("uuid", AccessDenied)
     }
 
     Scenario("Remove other users tag from a task") { fixture =>
@@ -68,10 +69,10 @@ class RemoveTagTest extends BaseFixtureFeature[RemoveTagFixture] {
       val request = RemoveTag.Request(fixture.loggedInUser, fixture.userTask.uuid, fixture.otherUserTag.uuid)
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should not pass the validation, and yield AccessDeined error")
-      response should containsFailedValidation("tagUUID", AccessDenied)
+      response.result should containsFailedValidation("tagUUID", AccessDenied)
     }
 
     Scenario("Validation passed") { fixture =>
@@ -79,10 +80,10 @@ class RemoveTagTest extends BaseFixtureFeature[RemoveTagFixture] {
       val request = RemoveTag.Request(fixture.loggedInUser, fixture.userTask.uuid, fixture.userTag1.uuid)
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should pass the validation")
-      response.success.value shouldBe a[Task]
+      response.result.success.value shouldBe a[Task]
     }
   }
 

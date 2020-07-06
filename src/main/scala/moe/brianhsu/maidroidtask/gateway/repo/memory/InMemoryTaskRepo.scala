@@ -1,5 +1,6 @@
 package moe.brianhsu.maidroidtask.gateway.repo.memory
 
+import java.time.LocalDateTime
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.Task
@@ -25,6 +26,16 @@ class InMemoryTaskRepo(data: InMemoryData) extends TaskRepo {
     override def update(uuid: UUID, entity: Task): Task = {
       uuidToTask += uuid -> entity
       entity
+    }
+
+    override def appendTag(uuid: UUID, tagUUID: UUID, updateTime: LocalDateTime): Task = {
+      val updatedTask = uuidToTask.get(uuid).map { task =>
+        task.copy(
+          tags = (tagUUID :: task.tags).distinct,
+          updateTime = updateTime
+        )
+      }.get
+      update(uuid, updatedTask)
     }
   }
 

@@ -35,7 +35,7 @@ class UseCaseExecutorTest extends AnyFeatureSpec with GivenWhenThen with Matcher
       val result = useCase.execute()
 
       Then("it should return Success contains the correct value")
-      result.success.value shouldBe 100
+      result.result.success.value shouldBe 100
     }
 
     Scenario("Run UseCase throw runtime error") {
@@ -53,7 +53,7 @@ class UseCaseExecutorTest extends AnyFeatureSpec with GivenWhenThen with Matcher
       val result = useCase.execute()
 
       Then("it will return Failure with correct exception")
-      result.failure.exception should have message "Error!"
+      result.result.failure.exception should have message "Error!"
     }
 
     Scenario("Run UseCase that has validation errors") {
@@ -73,8 +73,8 @@ class UseCaseExecutorTest extends AnyFeatureSpec with GivenWhenThen with Matcher
       val result = useCase.execute()
 
       Then("the validation result should be empty since it does not run validate")
-      result.failure.exception should have message "Validate failed."
-      result.failure.exception.asInstanceOf[ValidationErrors].failedValidations should contain theSameElementsInOrderAs List(    
+      result.result.failure.exception should have message "Validate failed."
+      result.result.failure.exception.asInstanceOf[ValidationErrors].failedValidations should contain theSameElementsInOrderAs List(
          FailedValidation("someValue", IsMalformed),
          FailedValidation("someValue", AccessDenied)
       )

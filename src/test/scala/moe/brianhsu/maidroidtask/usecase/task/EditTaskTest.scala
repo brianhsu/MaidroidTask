@@ -4,6 +4,7 @@ import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Journal, P1, ScheduledAt, Tag, Task, UpdateLog}
+import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, FailedValidation, NotFound, Required, ValidationErrors}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
@@ -41,13 +42,12 @@ class EditTaskFixture extends BaseFixture {
     )
   )
 
-  def run(request: EditTask.Request): (Try[Task], List[Journal]) = {
+  def run(request: EditTask.Request): UseCaseExecutorResult[Task] = {
     val useCase = new EditTask(request)
-    (useCase.execute(), useCase.journals)
+    useCase.execute()
   }
-
-
 }
+
 class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
   override protected def createFixture: EditTaskFixture = new EditTaskFixture
 
@@ -58,10 +58,10 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
       val request = EditTask.Request(fixture.loggedInUser, nonExistUUID, Some("SomeDesc"))
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should NOT pass the validation and yield NotFound error")
-      response should containsFailedValidation("uuid", NotFound)
+      response.result should containsFailedValidation("uuid", NotFound)
     }
 
     Scenario("Edit task that belong to other user") { fixture =>
@@ -69,10 +69,10 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
       val request = EditTask.Request(fixture.loggedInUser, fixture.otherUserTask.uuid, Some("SomeDesc"))
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should NOT pass the validation and yield AccessDenied error")
-      response should containsFailedValidation("uuid", AccessDenied)
+      response.result should containsFailedValidation("uuid", AccessDenied)
     }
 
     Scenario("Edit task that new task depends on non-exist task") { fixture =>
@@ -81,10 +81,10 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
       val request = EditTask.Request(fixture.loggedInUser, fixture.task1.uuid, dependsOn = Some(List(fixture.task2.uuid, nonExistUUID)))
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should NOT pass the validation, and yield NotFound error")
-      response should containsFailedValidation("dependsOn", NotFound)
+      response.result should containsFailedValidation("dependsOn", NotFound)
     }
 
     Scenario("Edit task that title is empty") { fixture =>
@@ -92,10 +92,10 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
       val request = EditTask.Request(fixture.loggedInUser, fixture.task1.uuid, Some("   \t \n   "))
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should NOT pass the validation and yield Required error")
-      response should containsFailedValidation("description", Required)
+      response.result should containsFailedValidation("description", Required)
     }
 
     Scenario("Edit task that new tags has non-exist tag UUID") { fixture =>
@@ -109,10 +109,10 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
       )
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("is should NOT pass the validation and yield NotFound error")
-      response should containsFailedValidation("tags", NotFound)
+      response.result should containsFailedValidation("tags", NotFound)
     }
 
     Scenario("Edit task that new tags belongs to other user") { fixture =>
@@ -125,10 +125,10 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
       )
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("is should NOT pass the validation and yield NotFound error")
-      response should containsFailedValidation("tags", AccessDenied)
+      response.result should containsFailedValidation("tags", AccessDenied)
     }
   }
 
@@ -158,7 +158,7 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
       )
 
       When("run the use case")
-      val (response, journals) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("the task in storage should be updated with new status")
       val expectedTask = Task(
@@ -181,14 +181,14 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
         updateTime = fixture.generator.currentTime
       )
 
-      isSameTask(response.success.value, expectedTask)
+      isSameTask(response.result.success.value, expectedTask)
 
       And("it should also updated to storage")
       val taskInStorage = fixture.taskRepo.read.findByUUID(expectedTask.uuid)
       isSameTask(taskInStorage.value, expectedTask)
 
       And("the journals should have correct entries")
-      journals shouldBe List(
+      response.journals shouldBe List(
         UpdateLog(
           fixture.generator.randomUUID, request.loggedInUser.uuid,
           request.uuid, expectedTask, fixture.generator.currentTime
@@ -204,7 +204,7 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
       )
 
       When("run the use case")
-      val (response, journals) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("the task in storage should only has description updated")
       val expectedTask = Task(
@@ -223,14 +223,14 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
         updateTime = fixture.generator.currentTime
       )
 
-      isSameTask(response.success.value, expectedTask)
+      isSameTask(response.result.success.value, expectedTask)
 
       And("it should also updated to storage")
       val taskInStorage = fixture.taskRepo.read.findByUUID(expectedTask.uuid)
       isSameTask(taskInStorage.value, expectedTask)
 
       And("the journals should have correct entries")
-      journals shouldBe List(
+      response.journals shouldBe List(
         UpdateLog(
           fixture.generator.randomUUID, request.loggedInUser.uuid,
           request.uuid, expectedTask, fixture.generator.currentTime

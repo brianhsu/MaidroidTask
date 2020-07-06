@@ -10,7 +10,7 @@ trait UseCase[T] {
   def journals: List[Journal]
   def validations: List[ValidationRules]
 
-  def execute()(implicit executor: UseCaseExecutor): Try[T] = executor.runUseCase(this)
+  def execute()(implicit executor: UseCaseExecutor): UseCaseExecutorResult[T] = executor.runUseCase(this)
 
   def validate(): List[FailedValidation] = {
     validations.flatMap { validation => 

@@ -5,7 +5,7 @@ import java.util.UUID
 import moe.brianhsu.maidroidtask.entity.{InsertLog, Journal, Project, User}
 import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
 import moe.brianhsu.maidroidtask.gateway.repo.ProjectRepo
-import moe.brianhsu.maidroidtask.usecase.{UseCase, validator}
+import moe.brianhsu.maidroidtask.usecase.UseCase
 import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
 import moe.brianhsu.maidroidtask.usecase.validator.{EntityValidator, GenericValidator}
 

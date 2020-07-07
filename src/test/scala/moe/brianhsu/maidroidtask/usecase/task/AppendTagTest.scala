@@ -2,7 +2,7 @@ package moe.brianhsu.maidroidtask.usecase.task
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Task, UpdateLog}
+import moe.brianhsu.maidroidtask.entity.{Journal, Task}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, NotFound}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
@@ -105,10 +105,11 @@ class AppendTagTest extends BaseFixtureFeature[AppendTagToTaskFixture] {
 
       And("generate correct log")
       response.journals shouldBe List(
-        UpdateLog(
+        Journal(
           fixture.generator.randomUUID,
           request.loggedInUser.uuid,
-          request.uuid,
+          request,
+          Some(fixture.userTask),
           updatedTask,
           fixture.generator.currentTime
         )
@@ -139,10 +140,11 @@ class AppendTagTest extends BaseFixtureFeature[AppendTagToTaskFixture] {
 
       And("generate correct log")
       response.journals shouldBe List(
-        UpdateLog(
+        Journal(
           fixture.generator.randomUUID,
           request.loggedInUser.uuid,
-          request.uuid,
+          request,
+          Some(task),
           updatedTask,
           fixture.generator.currentTime
         )

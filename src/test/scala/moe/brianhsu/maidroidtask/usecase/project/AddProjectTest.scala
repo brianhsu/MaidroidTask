@@ -2,7 +2,7 @@ package moe.brianhsu.maidroidtask.usecase.project
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{InsertLog, Project}
+import moe.brianhsu.maidroidtask.entity.{Journal, Project}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, NotFound, Required}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
@@ -156,13 +156,7 @@ class AddProjectTest extends BaseFixtureFeature[AddProjectFixture] {
 
       And("generate correct journal entry")
       response.journals shouldBe List(
-        InsertLog(
-          fixture.generator.randomUUID,
-          request.loggedInUser.uuid,
-          request.uuid,
-          returnedProject,
-          fixture.generator.currentTime
-        )
+        Journal(fixture.generator.randomUUID, request.loggedInUser.uuid, request, None, returnedProject, fixture.generator.currentTime)
       )
     }
 
@@ -182,9 +176,7 @@ class AddProjectTest extends BaseFixtureFeature[AddProjectFixture] {
 
       Then("it should returned a project with a parent project")
       val returnedProject = response.result.success.value
-      inside(returnedProject) { case Project(uuid, userUUID, name, note, parentProjectUUID, status, isTrashed, createTime, updateTime) =>
-        parentProjectUUID shouldBe Some(userProject.uuid)
-      }
+      returnedProject.parentProjectUUID shouldBe Some(userProject.uuid)
 
       And("store it to storage")
       val projectInStorage = fixture.projectRepo.read.findByUUID(request.uuid)
@@ -192,13 +184,7 @@ class AddProjectTest extends BaseFixtureFeature[AddProjectFixture] {
 
       And("generate correct journal entry")
       response.journals shouldBe List(
-        InsertLog(
-          fixture.generator.randomUUID,
-          request.loggedInUser.uuid,
-          request.uuid,
-          returnedProject,
-          fixture.generator.currentTime
-        )
+        Journal(fixture.generator.randomUUID, request.loggedInUser.uuid, request, None, returnedProject, fixture.generator.currentTime)
       )
     }
   }

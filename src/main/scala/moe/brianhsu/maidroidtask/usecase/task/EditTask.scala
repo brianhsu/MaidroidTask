@@ -3,10 +3,10 @@ package moe.brianhsu.maidroidtask.usecase.task
 import java.time.LocalDateTime
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Journal, ScheduledAt, Tag, Task, UpdateLog, User}
+import moe.brianhsu.maidroidtask.entity.{Journal, ScheduledAt, Tag, Task, User}
 import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
-import moe.brianhsu.maidroidtask.gateway.repo.{TagRepo, TaskRepo, Readable}
-import moe.brianhsu.maidroidtask.usecase.UseCase
+import moe.brianhsu.maidroidtask.gateway.repo.{Readable, TagRepo, TaskRepo}
+import moe.brianhsu.maidroidtask.usecase.{UseCase, UseCaseRequest}
 import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
 import moe.brianhsu.maidroidtask.usecase.validator.{EntityValidator, GenericValidator}
 
@@ -20,11 +20,12 @@ object EditTask {
                      waitUntil: Option[Option[LocalDateTime]] = None,
                      due: Option[Option[LocalDateTime]] = None,
                      scheduledAt: Option[Option[ScheduledAt]] = None,
-                     isDone: Option[Boolean] = None)
+                     isDone: Option[Boolean] = None) extends UseCaseRequest
 }
 
 class EditTask(request: EditTask.Request)(implicit taskRepo: TaskRepo, tagRepo: TagRepo, generator: DynamicDataGenerator) extends UseCase[Task] {
-  private lazy val updateTask = taskRepo.read.findByUUID(request.uuid).map { task =>
+  private lazy val oldTask = taskRepo.read.findByUUID(request.uuid)
+  private lazy val updateTask = oldTask.map { task =>
     task.copy(
       description = request.description.getOrElse(task.description),
       note = request.note.getOrElse(task.note),
@@ -45,7 +46,7 @@ class EditTask(request: EditTask.Request)(implicit taskRepo: TaskRepo, tagRepo: 
   }
 
   override def journals: List[Journal] = updateTask.map(task =>
-    UpdateLog(generator.randomUUID, request.loggedInUser.uuid, task.uuid, task, generator.currentTime)
+    Journal(generator.randomUUID, request.loggedInUser.uuid, request, oldTask, task, generator.currentTime)
   ).toList
 
   override def validations: List[ValidationRules] = {

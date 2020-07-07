@@ -3,7 +3,7 @@ package moe.brianhsu.maidroidtask.usecase.tag
 import java.time.LocalDateTime
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Tag, UpdateLog}
+import moe.brianhsu.maidroidtask.entity.{Journal, Tag}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, NotFound, Required}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
@@ -17,9 +17,9 @@ class EditTagFixture extends BaseFixture {
 
   val fixtureCreateTime = LocalDateTime.now
 
-  tagRepo.write.insert(Tag(otherUserTagUUID, otherUser.uuid, otherUserTagName, None, isTrashed = false, fixtureCreateTime, fixtureCreateTime))
-  tagRepo.write.insert(Tag(tag1UUID, loggedInUser.uuid, "UserTag", None, isTrashed = false, fixtureCreateTime, fixtureCreateTime))
-  tagRepo.write.insert(Tag(tag2UUID, loggedInUser.uuid, existTagName, None, isTrashed = false, fixtureCreateTime, fixtureCreateTime))
+  val otherUserTag = tagRepo.write.insert(Tag(otherUserTagUUID, otherUser.uuid, otherUserTagName, None, isTrashed = false, fixtureCreateTime, fixtureCreateTime))
+  val tag1 = tagRepo.write.insert(Tag(tag1UUID, loggedInUser.uuid, "UserTag", None, isTrashed = false, fixtureCreateTime, fixtureCreateTime))
+  val tag2 = tagRepo.write.insert(Tag(tag2UUID, loggedInUser.uuid, existTagName, None, isTrashed = false, fixtureCreateTime, fixtureCreateTime))
 
   def run(request: EditTag.Request): UseCaseExecutorResult[Tag] = {
     val useCase = new EditTag(request)
@@ -152,9 +152,13 @@ class EditTagTest extends BaseFixtureFeature[EditTagFixture] {
 
       And("generate correct journal entry")
       response.journals shouldBe List(
-        UpdateLog(
-          fixture.generator.randomUUID, request.loggedInUser.uuid,
-          request.uuid, returnedTag, fixture.generator.currentTime
+        Journal(
+          fixture.generator.randomUUID,
+          request.loggedInUser.uuid,
+          request,
+          Some(fixture.tag1),
+          returnedTag,
+          fixture.generator.currentTime
         )
       )
     }
@@ -188,9 +192,13 @@ class EditTagTest extends BaseFixtureFeature[EditTagFixture] {
 
       And("generate correct journal entry")
       response.journals shouldBe List(
-        UpdateLog(
-          fixture.generator.randomUUID, request.loggedInUser.uuid,
-          request.uuid, returnedTag, fixture.generator.currentTime
+        Journal(
+          fixture.generator.randomUUID,
+          request.loggedInUser.uuid,
+          request,
+          Some(fixture.tag1),
+          returnedTag,
+          fixture.generator.currentTime
         )
       )
     }

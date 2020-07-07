@@ -95,15 +95,15 @@ class UseCaseExecutorTest extends AnyFeatureSpec with GivenWhenThen with Matcher
       case object InsertedEntity extends Entity
       case object UpdatedEntity extends Entity
       case object DeletedEntity extends Entity
+      case object DummyRequest extends UseCaseRequest {
+        override def uuid: UUID = UUID.randomUUID
+      }
       val historyUUID = UUID.fromString("00b1bdbe-e66d-49fb-b7b9-4d74f00dc300")
-      val insertUUID = UUID.fromString("b9a3dbb4-262d-42f4-892e-62471f012512")
-      val updateUUID = UUID.fromString("8aea921b-72c6-44b1-8faf-8d4d579b52a1")
-      val deleteUUID = UUID.fromString("dd69a00c-e893-433b-9394-77b332aa4591")
       val userUUID = UUID.fromString("a45ed52e-6c4f-4b3b-9b75-ddcf4cbdcc82")
       val journalList = List(
-        InsertLog(historyUUID, userUUID, insertUUID, InsertedEntity, LocalDateTime.parse("2020-07-01T10:00:00")),
-        UpdateLog(historyUUID, userUUID, updateUUID, UpdatedEntity, LocalDateTime.parse("2020-07-01T11:00:00")),
-        TrashLog(historyUUID, userUUID, deleteUUID, DeletedEntity, LocalDateTime.parse("2020-07-01T11:00:00"))
+        Journal(historyUUID, userUUID, DummyRequest, None, InsertedEntity, LocalDateTime.parse("2020-07-01T10:00:00")),
+        Journal(historyUUID, userUUID, DummyRequest, Some(InsertedEntity), UpdatedEntity, LocalDateTime.parse("2020-07-01T11:00:00")),
+        Journal(historyUUID, userUUID, DummyRequest, Some(UpdatedEntity), DeletedEntity, LocalDateTime.parse("2020-07-01T11:00:00"))
       )
 
       And("a use case with journals")

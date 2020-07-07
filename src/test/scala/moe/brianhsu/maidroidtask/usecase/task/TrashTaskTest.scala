@@ -3,20 +3,18 @@ package moe.brianhsu.maidroidtask.usecase.task
 import java.time.LocalDateTime
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Task, TrashLog}
+import moe.brianhsu.maidroidtask.entity.{Journal, Task}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, NotFound}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
-
-import scala.util.Try
 
 class TrashTaskFixture extends BaseFixture {
   val otherUserTaskUUID = UUID.fromString("e334b225-d4b7-406a-a20d-3b0050a14b12")
   val taskUUID = UUID.fromString("8c2f648b-bbf3-4c00-978d-d910a5c7249e")
   private val fixtureCreateTime = LocalDateTime.parse("2020-07-30T11:12:13")
 
-  taskRepo.write.insert(Task(otherUserTaskUUID, otherUser.uuid, "Task of Other User", createTime = fixtureCreateTime, updateTime = fixtureCreateTime))
-  taskRepo.write.insert(Task(taskUUID, loggedInUser.uuid, "Task of LoggedIn User", createTime = fixtureCreateTime, updateTime = fixtureCreateTime))
+  val otherUserTask = taskRepo.write.insert(Task(otherUserTaskUUID, otherUser.uuid, "Task of Other User", createTime = fixtureCreateTime, updateTime = fixtureCreateTime))
+  val userTask = taskRepo.write.insert(Task(taskUUID, loggedInUser.uuid, "Task of LoggedIn User", createTime = fixtureCreateTime, updateTime = fixtureCreateTime))
 
   def run(request: TrashTask.Request): UseCaseExecutorResult[Task] = {
     val useCase = new TrashTask(request)
@@ -75,9 +73,13 @@ class TrashTaskTest extends BaseFixtureFeature[TrashTaskFixture] {
 
       And("generate correct journal entry")
       response.journals should contain theSameElementsInOrderAs List(
-        TrashLog(
-          fixture.generator.randomUUID, fixture.loggedInUser.uuid, task.uuid,
-          taskInStorage, fixture.generator.currentTime
+        Journal(
+          fixture.generator.randomUUID,
+          fixture.loggedInUser.uuid,
+          request,
+          Some(fixture.userTask),
+          taskInStorage,
+          fixture.generator.currentTime
         )
       )
     }

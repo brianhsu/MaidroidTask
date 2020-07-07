@@ -3,7 +3,7 @@ package moe.brianhsu.maidroidtask.usecase.task
 import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{ScheduledAt, Tag, Task, UpdateLog}
+import moe.brianhsu.maidroidtask.entity.{Journal, ScheduledAt, Tag, Task}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, NotFound, Required}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
@@ -184,9 +184,13 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
 
       And("the journals should have correct entries")
       response.journals shouldBe List(
-        UpdateLog(
-          fixture.generator.randomUUID, request.loggedInUser.uuid,
-          request.uuid, expectedTask, fixture.generator.currentTime
+        Journal(
+          fixture.generator.randomUUID,
+          request.loggedInUser.uuid,
+          request,
+          Some(fixture.task1),
+          expectedTask,
+          fixture.generator.currentTime
         )
       )
     }
@@ -225,9 +229,13 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
 
       And("the journals should have correct entries")
       response.journals shouldBe List(
-        UpdateLog(
-          fixture.generator.randomUUID, request.loggedInUser.uuid,
-          request.uuid, expectedTask, fixture.generator.currentTime
+        Journal(
+          fixture.generator.randomUUID,
+          request.loggedInUser.uuid,
+          request,
+          Some(fixture.task3),
+          expectedTask,
+          fixture.generator.currentTime
         )
       )
     }

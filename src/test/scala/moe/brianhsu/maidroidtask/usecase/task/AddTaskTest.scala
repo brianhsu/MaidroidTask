@@ -3,7 +3,7 @@ package moe.brianhsu.maidroidtask.usecase.task
 import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{InsertLog, ScheduledAt, Tag, Task}
+import moe.brianhsu.maidroidtask.entity.{Journal, ScheduledAt, Tag, Task}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, NotFound, Required}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
@@ -191,10 +191,12 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
 
       And("generate correct journal entry")
       response.journals should contain theSameElementsInOrderAs List(
-        InsertLog(
+        Journal(
           fixture.generator.randomUUID,
           request.loggedInUser.uuid,
-          taskUUID, taskReturned,
+          request,
+          None,
+          taskReturned,
           fixture.generator.currentTime
         )
       )

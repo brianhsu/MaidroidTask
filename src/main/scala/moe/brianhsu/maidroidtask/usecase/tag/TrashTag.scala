@@ -2,17 +2,16 @@ package moe.brianhsu.maidroidtask.usecase.tag
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Journal, Tag, TrashLog, User}
+import moe.brianhsu.maidroidtask.entity.{Journal, Tag, User}
 import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
 import moe.brianhsu.maidroidtask.gateway.repo.{TagRepo, TaskRepo}
-import moe.brianhsu.maidroidtask.usecase.{UseCase, UseCaseExecutor}
+import moe.brianhsu.maidroidtask.usecase.{UseCase, UseCaseExecutor, UseCaseRequest}
 import moe.brianhsu.maidroidtask.usecase.Validations.{ErrorDescription, HasChildren, ValidationRules}
-import moe.brianhsu.maidroidtask.usecase.tag.TrashTag.Request
 import moe.brianhsu.maidroidtask.usecase.task.RemoveTag
 import moe.brianhsu.maidroidtask.usecase.validator.EntityValidator
 
 object TrashTag {
-  case class Request(loggedInUser: User, uuid: UUID)
+  case class Request(loggedInUser: User, uuid: UUID) extends UseCaseRequest
 }
 
 class TrashTag(request: TrashTag.Request)(implicit tagRepo: TagRepo,
@@ -21,7 +20,8 @@ class TrashTag(request: TrashTag.Request)(implicit tagRepo: TagRepo,
                                           executor: UseCaseExecutor) extends UseCase[Tag] {
 
   private var cleanupJournals: List[Journal] = Nil
-  private lazy val trashedTagHolder = tagRepo.read.findByUUID(request.uuid).map { tag =>
+  private lazy val oldTag = tagRepo.read.findByUUID(request.uuid)
+  private lazy val trashedTagHolder = oldTag.map { tag =>
     tag.copy(
       isTrashed = true,
       updateTime = generator.currentTime
@@ -43,12 +43,9 @@ class TrashTag(request: TrashTag.Request)(implicit tagRepo: TagRepo,
   }
 
   override def journals: List[Journal] = cleanupJournals ++ trashedTagHolder.map { tag =>
-    TrashLog(
-      generator.randomUUID,
-      request.loggedInUser.uuid,
-      request.uuid,
-      tag,
-      generator.currentTime
+    Journal(
+      generator.randomUUID, request.loggedInUser.uuid,
+      request, oldTag, tag, generator.currentTime
     )
   }.toList
 

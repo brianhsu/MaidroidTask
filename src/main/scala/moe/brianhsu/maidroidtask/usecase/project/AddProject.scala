@@ -2,10 +2,10 @@ package moe.brianhsu.maidroidtask.usecase.project
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{InsertLog, Journal, Project, User}
+import moe.brianhsu.maidroidtask.entity.{Journal, Project, User}
 import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
 import moe.brianhsu.maidroidtask.gateway.repo.ProjectRepo
-import moe.brianhsu.maidroidtask.usecase.UseCase
+import moe.brianhsu.maidroidtask.usecase.{UseCase, UseCaseRequest}
 import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
 import moe.brianhsu.maidroidtask.usecase.validator.{EntityValidator, GenericValidator}
 
@@ -15,7 +15,7 @@ object AddProject {
                      name: String,
                      note: Option[String] = None,
                      parentProjectUUID: Option[UUID] = None,
-                     status: Project.Status = Project.Active)
+                     status: Project.Status = Project.Active) extends UseCaseRequest
 }
 
 class AddProject(request: AddProject.Request)(implicit projectRepo: ProjectRepo, generator: DynamicDataGenerator) extends UseCase[Project] {
@@ -34,9 +34,13 @@ class AddProject(request: AddProject.Request)(implicit projectRepo: ProjectRepo,
   }
 
   override def journals: List[Journal] = List(
-    InsertLog(
-      generator.randomUUID, request.loggedInUser.uuid,
-      request.uuid, project, generator.currentTime
+    Journal(
+      generator.randomUUID,
+      request.loggedInUser.uuid,
+      request,
+      None,
+      project,
+      generator.currentTime
     )
   )
 

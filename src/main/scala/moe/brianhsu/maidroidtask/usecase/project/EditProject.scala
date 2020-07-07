@@ -2,10 +2,10 @@ package moe.brianhsu.maidroidtask.usecase.project
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Journal, Project, UpdateLog, User}
+import moe.brianhsu.maidroidtask.entity.{Journal, Project, User}
 import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
 import moe.brianhsu.maidroidtask.gateway.repo.ProjectRepo
-import moe.brianhsu.maidroidtask.usecase.UseCase
+import moe.brianhsu.maidroidtask.usecase.{UseCase, UseCaseRequest}
 import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
 import moe.brianhsu.maidroidtask.usecase.validator.EntityValidator
 
@@ -14,12 +14,13 @@ object EditProject {
                      name: Option[String] = None,
                      note: Option[Option[String]] = None,
                      parentProjectUUID: Option[Option[UUID]] = None,
-                     status: Option[Project.Status] = None)
+                     status: Option[Project.Status] = None) extends UseCaseRequest
 }
 
 class EditProject(request: EditProject.Request)(implicit projectRepo: ProjectRepo, generator: DynamicDataGenerator) extends UseCase[Project] {
 
-  private lazy val updatedProject = projectRepo.read.findByUUID(request.uuid).map { project =>
+  private lazy val oldProject = projectRepo.read.findByUUID(request.uuid)
+  private lazy val updatedProject = oldProject.map { project =>
     project.copy(
       name = request.name.getOrElse(project.name),
       note = request.note.getOrElse(project.note),
@@ -33,12 +34,9 @@ class EditProject(request: EditProject.Request)(implicit projectRepo: ProjectRep
   }
 
   override def journals: List[Journal] = updatedProject.map { project =>
-    UpdateLog(
-      generator.randomUUID,
-      request.loggedInUser.uuid,
-      request.uuid,
-      project,
-      generator.currentTime
+    Journal(
+      generator.randomUUID, request.loggedInUser.uuid,
+      request, oldProject, project, generator.currentTime
     )
   }.toList
 

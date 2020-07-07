@@ -3,7 +3,7 @@ package moe.brianhsu.maidroidtask.usecase.project
 import java.time.LocalDateTime
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Project, UpdateLog}
+import moe.brianhsu.maidroidtask.entity.{Project, Journal}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, NotFound}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
@@ -161,10 +161,11 @@ class EditProjectTest extends BaseFixtureFeature[EditProjectFixture] {
 
       And("generate correct journal entry")
       response.journals shouldBe List(
-        UpdateLog(
+        Journal(
           fixture.generator.randomUUID,
           fixture.loggedInUser.uuid,
-          request.uuid,
+          request,
+          Some(fixture.userProject),
           projectInStorage,
           fixture.generator.currentTime
         )
@@ -210,10 +211,11 @@ class EditProjectTest extends BaseFixtureFeature[EditProjectFixture] {
 
       And("generate correct journal entry")
       response.journals shouldBe List(
-        UpdateLog(
+        Journal(
           fixture.generator.randomUUID,
           fixture.loggedInUser.uuid,
-          request.uuid,
+          request,
+          Some(myProject),
           projectInStorage,
           fixture.generator.currentTime
         )

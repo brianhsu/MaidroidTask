@@ -2,7 +2,7 @@ package moe.brianhsu.maidroidtask.usecase.tag
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{InsertLog, Journal, Tag}
+import moe.brianhsu.maidroidtask.entity.{Journal, Tag}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, FailedValidation, NotFound, Required, ValidationErrors}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
@@ -170,7 +170,14 @@ class AddTagTest extends BaseFixtureFeature[AddTagFixture] {
 
       And("generate correct journal entry")
       response.journals should contain theSameElementsInOrderAs List(
-        InsertLog(fixture.generator.randomUUID, request.loggedInUser.uuid, request.uuid, returnedTag, fixture.generator.currentTime)
+        Journal(
+          fixture.generator.randomUUID,
+          request.loggedInUser.uuid,
+          request,
+          None,
+          returnedTag,
+          fixture.generator.currentTime
+        )
       )
     }
   }

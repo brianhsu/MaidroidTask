@@ -3,7 +3,7 @@ package moe.brianhsu.maidroidtask.usecase.tag
 import java.time.LocalDateTime
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Tag, TrashLog, UpdateLog}
+import moe.brianhsu.maidroidtask.entity.{Journal, Tag}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, HasChildren, NotFound}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
@@ -102,10 +102,11 @@ class TrashTagTest extends BaseFixtureFeature[TrashTagFixture] {
 
       And("generate the correct journal entry")
       response.journals shouldBe List(
-        TrashLog(
+        Journal(
           fixture.generator.randomUUID,
           request.loggedInUser.uuid,
-          request.uuid,
+          request,
+          Some(fixture.childTag),
           tagInStorage,
           fixture.generator.currentTime
         )
@@ -132,15 +133,7 @@ class TrashTagTest extends BaseFixtureFeature[TrashTagFixture] {
       updatedTask.updateTime shouldBe fixture.generator.currentTime
 
       And("The journal log should contains the entry that update the task")
-      response.journals should contain (
-        UpdateLog(
-          fixture.generator.randomUUID,
-          fixture.loggedInUser.uuid,
-          task.uuid,
-          updatedTask,
-          fixture.generator.currentTime
-        )
-      )
+      response.journals.map(_.request.uuid) should contain (task.uuid)
     }
 
     Scenario("One task has multiple tags") { fixture =>
@@ -167,15 +160,7 @@ class TrashTagTest extends BaseFixtureFeature[TrashTagFixture] {
       updatedTask.updateTime shouldBe fixture.generator.currentTime
 
       And("The journal log should contains the entry that update the task")
-      response.journals should contain (
-        UpdateLog(
-          fixture.generator.randomUUID,
-          fixture.loggedInUser.uuid,
-          task.uuid,
-          updatedTask,
-          fixture.generator.currentTime
-        )
-      )
+      response.journals.map(_.request.uuid) should contain (task.uuid)
     }
 
     Scenario("Multiple tasks has multple tags") { fixture =>
@@ -215,30 +200,7 @@ class TrashTagTest extends BaseFixtureFeature[TrashTagFixture] {
       updatedTask3.tags should contain theSameElementsAs List(anotherTag.uuid)
 
       And("The journal log should contains the entry that update the task")
-      response.journals should contain.allOf(
-        UpdateLog(
-          fixture.generator.randomUUID,
-          fixture.loggedInUser.uuid,
-          updatedTask1.uuid,
-          updatedTask1,
-          fixture.generator.currentTime
-        ),
-        UpdateLog(
-          fixture.generator.randomUUID,
-          fixture.loggedInUser.uuid,
-          task2.uuid,
-          updatedTask2,
-          fixture.generator.currentTime
-        ),
-        UpdateLog(
-          fixture.generator.randomUUID,
-          fixture.loggedInUser.uuid,
-          task3.uuid,
-          updatedTask3,
-          fixture.generator.currentTime
-        )
-
-      )
+      response.journals.map(_.request.uuid) should contain.allOf(updatedTask1.uuid, updatedTask2.uuid, updatedTask3.uuid)
     }
   }
 }

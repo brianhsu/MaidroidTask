@@ -15,6 +15,7 @@ class InMemoryTaskRepo(data: InMemoryData) extends TaskRepo {
 
   class InMemoryTaskRepoRead extends TaskReadable {
     override def findByUUID(uuid: UUID): Option[Task] = uuidToTask.get(uuid)
+    override def findByTag(uuid: UUID): List[Task] = uuidToTask.values.filter(_.tags contains uuid).toList
   }
 
   class InMemoryTaskRepoWrite extends TaskWriteable {

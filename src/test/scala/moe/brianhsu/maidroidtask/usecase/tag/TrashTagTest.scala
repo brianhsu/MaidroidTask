@@ -3,7 +3,7 @@ package moe.brianhsu.maidroidtask.usecase.tag
 import java.time.LocalDateTime
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Tag, TrashLog}
+import moe.brianhsu.maidroidtask.entity.{Tag, TrashLog, UpdateLog}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, HasChildren, NotFound}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
@@ -109,6 +109,135 @@ class TrashTagTest extends BaseFixtureFeature[TrashTagFixture] {
           tagInStorage,
           fixture.generator.currentTime
         )
+      )
+    }
+  }
+
+  Feature("Trash tag should also unlink the tag from tasks") {
+    Scenario("One task only has one tag") { fixture =>
+      Given("a tag that we would like to trash")
+      val tag = fixture.createTag(fixture.loggedInUser, "SomeTag")
+
+      And("a task that has and only has the tag")
+      val task = fixture.createTask(fixture.loggedInUser, "Task", List(tag.uuid))
+
+      When("we request to trash the tag")
+      val request = TrashTag.Request(fixture.loggedInUser, tag.uuid)
+      val response = fixture.run(request)
+      response.result.isSuccess shouldBe true
+
+      Then("the task should also be updated, and contains no tag")
+      val updatedTask = fixture.taskRepo.read.findByUUID(task.uuid).value
+      updatedTask.tags shouldBe Nil
+      updatedTask.updateTime shouldBe fixture.generator.currentTime
+
+      And("The journal log should contains the entry that update the task")
+      response.journals should contain (
+        UpdateLog(
+          fixture.generator.randomUUID,
+          fixture.loggedInUser.uuid,
+          task.uuid,
+          updatedTask,
+          fixture.generator.currentTime
+        )
+      )
+    }
+
+    Scenario("One task has multiple tags") { fixture =>
+      Given("a tag that we would like to trash")
+      val someTag = fixture.createTag(fixture.loggedInUser, "Tag1")
+      val anotherTag = fixture.createTag(fixture.loggedInUser, "Tag 2")
+      val tagToBeTrashed = fixture.createTag(fixture.loggedInUser, "SomeTag")
+
+      And("a task that has multiple tags, including above tag")
+      val task = fixture.createTask(
+        fixture.loggedInUser,
+        "Task",
+        tags = List(someTag.uuid, tagToBeTrashed.uuid, anotherTag.uuid)
+      )
+
+      When("we request to trash the tag")
+      val request = TrashTag.Request(fixture.loggedInUser, tagToBeTrashed.uuid)
+      val response = fixture.run(request)
+      response.result.isSuccess shouldBe true
+
+      Then("the task should also be updated, and contains tags that is not trashed")
+      val updatedTask = fixture.taskRepo.read.findByUUID(task.uuid).value
+      updatedTask.tags should contain theSameElementsAs List(someTag.uuid, anotherTag.uuid)
+      updatedTask.updateTime shouldBe fixture.generator.currentTime
+
+      And("The journal log should contains the entry that update the task")
+      response.journals should contain (
+        UpdateLog(
+          fixture.generator.randomUUID,
+          fixture.loggedInUser.uuid,
+          task.uuid,
+          updatedTask,
+          fixture.generator.currentTime
+        )
+      )
+    }
+
+    Scenario("Multiple tasks has multple tags") { fixture =>
+      Given("a tag that we would like to trash")
+      val someTag = fixture.createTag(fixture.loggedInUser, "Tag1")
+      val anotherTag = fixture.createTag(fixture.loggedInUser, "Tag 2")
+      val tagToBeTrashed = fixture.createTag(fixture.loggedInUser, "SomeTag")
+
+      And("multiple task that has multiple tags, including above tag")
+      val task1 = fixture.createTask(
+        fixture.loggedInUser,
+        "Task",
+        tags = List(someTag.uuid, tagToBeTrashed.uuid, anotherTag.uuid)
+      )
+      val task2 = fixture.createTask(
+        fixture.loggedInUser,
+        "Task",
+        tags = List(tagToBeTrashed.uuid)
+      )
+      val task3 = fixture.createTask(
+        fixture.loggedInUser,
+        "Task",
+        tags = List(tagToBeTrashed.uuid, anotherTag.uuid)
+      )
+
+      When("we request to trash the tag")
+      val request = TrashTag.Request(fixture.loggedInUser, tagToBeTrashed.uuid)
+      val response = fixture.run(request)
+      response.result.isSuccess shouldBe true
+
+      Then("all task should also be updated, and contains tags that is not trashed")
+      val updatedTask1 = fixture.taskRepo.read.findByUUID(task1.uuid).value
+      val updatedTask2 = fixture.taskRepo.read.findByUUID(task2.uuid).value
+      val updatedTask3 = fixture.taskRepo.read.findByUUID(task3.uuid).value
+      updatedTask1.tags should contain theSameElementsAs List(someTag.uuid, anotherTag.uuid)
+      updatedTask2.tags shouldBe Nil
+      updatedTask3.tags should contain theSameElementsAs List(anotherTag.uuid)
+
+      And("The journal log should contains the entry that update the task")
+      response.journals should contain.allOf(
+        UpdateLog(
+          fixture.generator.randomUUID,
+          fixture.loggedInUser.uuid,
+          updatedTask1.uuid,
+          updatedTask1,
+          fixture.generator.currentTime
+        ),
+        UpdateLog(
+          fixture.generator.randomUUID,
+          fixture.loggedInUser.uuid,
+          task2.uuid,
+          updatedTask2,
+          fixture.generator.currentTime
+        ),
+        UpdateLog(
+          fixture.generator.randomUUID,
+          fixture.loggedInUser.uuid,
+          task3.uuid,
+          updatedTask3,
+          fixture.generator.currentTime
+        )
+
       )
     }
   }

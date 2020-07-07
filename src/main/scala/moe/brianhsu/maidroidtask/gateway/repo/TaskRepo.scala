@@ -10,7 +10,10 @@ trait TaskRepo {
   def read: TaskReadable
   def write: TaskWriteable
 
-  trait TaskReadable extends Readable[Task]
+  trait TaskReadable extends Readable[Task] {
+    def findByTag(uuid: UUID): List[Task]
+  }
+
   trait TaskWriteable extends Writable[Task] {
     def appendTag(uuid: UUID, tagUUID: UUID, updateTime: LocalDateTime): Task
     def removeTag(uuid: UUID, tagUUID: UUID, updateTime: LocalDateTime): Task

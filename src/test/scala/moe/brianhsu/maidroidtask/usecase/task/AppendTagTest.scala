@@ -2,9 +2,10 @@ package moe.brianhsu.maidroidtask.usecase.task
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Journal, Task}
+import moe.brianhsu.maidroidtask.entity.{Change, Task}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, NotFound}
+import moe.brianhsu.maidroidtask.usecase.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 class AppendTagToTaskFixture extends BaseFixture {
@@ -16,7 +17,7 @@ class AppendTagToTaskFixture extends BaseFixture {
   val userTask = createTask(loggedInUser, "UserTask")
   val otherUserTask = createTask(otherUser, "OtherUserTask")
 
-  def run(request: AppendTag.Request): UseCaseExecutorResult[Task] = {
+  def run(request: AppendTag.Request): ResultHolder[Task] = {
     val useCase = new AppendTag(request)
     useCase.execute()
   }
@@ -35,7 +36,7 @@ class AppendTagTest extends BaseFixtureFeature[AppendTagToTaskFixture] {
       val response = fixture.run(request)
 
       Then("it should NOT pass the validation, and yield NotFound error")
-      response.result should containsFailedValidation("uuid", NotFound)
+      response should containsFailedValidation("uuid", NotFound)
     }
 
     Scenario("Append non-exist tag to task") { fixture =>
@@ -47,7 +48,7 @@ class AppendTagTest extends BaseFixtureFeature[AppendTagToTaskFixture] {
       val response = fixture.run(request)
 
       Then("it should NOT pass the validation, and yield NotFound error")
-      response.result should containsFailedValidation("tagUUID", NotFound)
+      response should containsFailedValidation("tagUUID", NotFound)
     }
 
     Scenario("Append tag to a task of other user") { fixture =>
@@ -58,7 +59,7 @@ class AppendTagTest extends BaseFixtureFeature[AppendTagToTaskFixture] {
       val response = fixture.run(request)
 
       Then("it should NOT pass the validation, and yield AccessDenied error")
-      response.result should containsFailedValidation("uuid", AccessDenied)
+      response should containsFailedValidation("uuid", AccessDenied)
     }
 
     Scenario("Append other user tag to as task") { fixture =>
@@ -69,7 +70,7 @@ class AppendTagTest extends BaseFixtureFeature[AppendTagToTaskFixture] {
       val response = fixture.run(request)
 
       Then("it should NOT pass the validation, and yield AccessDenied error")
-      response.result should containsFailedValidation("tagUUID", AccessDenied)
+      response should containsFailedValidation("tagUUID", AccessDenied)
     }
 
     Scenario("Add tag to user's task") { fixture =>
@@ -80,7 +81,7 @@ class AppendTagTest extends BaseFixtureFeature[AppendTagToTaskFixture] {
       val response = fixture.run(request)
 
       Then("it should pass the validation")
-      response.result.success.value shouldBe a[Task]
+      response.success.value.result shouldBe a[Task]
     }
   }
 
@@ -93,7 +94,7 @@ class AppendTagTest extends BaseFixtureFeature[AppendTagToTaskFixture] {
       val response = fixture.run(request)
 
       Then("the returned task will has only the appended tag")
-      val updatedTask = response.result.success.value
+      val updatedTask = response.success.value.result
       inside(updatedTask) { case task: Task =>
         task.tags shouldBe List(fixture.userTag1.uuid)
         task.updateTime shouldBe fixture.generator.currentTime
@@ -104,15 +105,8 @@ class AppendTagTest extends BaseFixtureFeature[AppendTagToTaskFixture] {
       taskInStorage shouldBe updatedTask
 
       And("generate correct log")
-      response.journals shouldBe List(
-        Journal(
-          fixture.generator.randomUUID,
-          request.loggedInUser.uuid,
-          request,
-          Some(fixture.userTask),
-          updatedTask,
-          fixture.generator.currentTime
-        )
+      response.success.value.journals.changes shouldBe List(
+        Change(fixture.generator.randomUUID, Some(fixture.userTask), updatedTask, fixture.generator.currentTime)
       )
     }
 
@@ -128,7 +122,7 @@ class AppendTagTest extends BaseFixtureFeature[AppendTagToTaskFixture] {
       val response = fixture.run(request)
 
       Then("the returned task will has the old tags and new one")
-      val updatedTask = response.result.success.value
+      val updatedTask = response.success.value.result
       inside(updatedTask) { case task: Task =>
         task.tags should contain theSameElementsAs List(fixture.userTag1.uuid, fixture.userTag2.uuid, fixture.userTag3.uuid)
         task.updateTime shouldBe fixture.generator.currentTime
@@ -139,15 +133,8 @@ class AppendTagTest extends BaseFixtureFeature[AppendTagToTaskFixture] {
       taskInStorage shouldBe updatedTask
 
       And("generate correct log")
-      response.journals shouldBe List(
-        Journal(
-          fixture.generator.randomUUID,
-          request.loggedInUser.uuid,
-          request,
-          Some(task),
-          updatedTask,
-          fixture.generator.currentTime
-        )
+      response.success.value.journals.changes shouldBe List(
+        Change(fixture.generator.randomUUID, Some(task), updatedTask, fixture.generator.currentTime)
       )
     }
 

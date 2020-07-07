@@ -3,7 +3,7 @@ package moe.brianhsu.maidroidtask.usecase.task
 import java.time.LocalDateTime
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Journal, ScheduledAt, Tag, Task, User}
+import moe.brianhsu.maidroidtask.entity.{GroupedJournal, Change, ScheduledAt, Tag, Task, User}
 import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
 import moe.brianhsu.maidroidtask.gateway.repo.{Readable, TagRepo, TaskRepo}
 import moe.brianhsu.maidroidtask.usecase.{UseCase, UseCaseRequest}
@@ -45,8 +45,13 @@ class EditTask(request: EditTask.Request)(implicit taskRepo: TaskRepo, tagRepo: 
     updateTask.get
   }
 
-  override def journals: List[Journal] = updateTask.map(task =>
-    Journal(generator.randomUUID, request.loggedInUser.uuid, request, oldTask, task, generator.currentTime)
+  override def groupedJournal: GroupedJournal = GroupedJournal(
+    generator.randomUUID, request.loggedInUser.uuid,
+    request, journals, generator.currentTime
+  )
+
+  private def journals: List[Change] = updateTask.map(task =>
+    Change(generator.randomUUID, oldTask, task, generator.currentTime)
   ).toList
 
   override def validations: List[ValidationRules] = {

@@ -2,14 +2,15 @@ package moe.brianhsu.maidroidtask.usecase.project
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Journal, Project}
+import moe.brianhsu.maidroidtask.entity.{Change, Project}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, NotFound, Required}
+import moe.brianhsu.maidroidtask.usecase.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 class AddProjectFixture extends BaseFixture {
 
-  def run(request: AddProject.Request): UseCaseExecutorResult[Project] = {
+  def run(request: AddProject.Request): ResultHolder[Project] = {
     val useCase = new AddProject(request)
     useCase.execute()
   }
@@ -28,7 +29,7 @@ class AddProjectTest extends BaseFixtureFeature[AddProjectFixture] {
       val response = fixture.run(request)
 
       Then("it should NOT pass the validation, and yield Duplicate error")
-      response.result should containsFailedValidation("uuid", Duplicated)
+      response should containsFailedValidation("uuid", Duplicated)
     }
 
     Scenario("Add a project without name") { fixture =>
@@ -39,7 +40,7 @@ class AddProjectTest extends BaseFixtureFeature[AddProjectFixture] {
       val response = fixture.run(request)
 
       Then("it should NOT pass the validation, and yield Required error")
-      response.result should containsFailedValidation("name", Required)
+      response should containsFailedValidation("name", Required)
     }
 
     Scenario("Add a project with a non-exist parent project") { fixture =>
@@ -55,7 +56,7 @@ class AddProjectTest extends BaseFixtureFeature[AddProjectFixture] {
       val response = fixture.run(request)
 
       Then("it should NOT pass the validation, and yield NotFound error")
-      response.result should containsFailedValidation("parentProjectUUID", NotFound)
+      response should containsFailedValidation("parentProjectUUID", NotFound)
     }
 
     Scenario("Add a project with a parent project belongs to other user") { fixture =>
@@ -71,7 +72,7 @@ class AddProjectTest extends BaseFixtureFeature[AddProjectFixture] {
       val response = fixture.run(request)
 
       Then("it should NOT pass the validation, and yield AccessDenied error")
-      response.result should containsFailedValidation("parentProjectUUID", AccessDenied)
+      response should containsFailedValidation("parentProjectUUID", AccessDenied)
     }
 
     Scenario("Add project with duplicate name") { fixture =>
@@ -83,7 +84,7 @@ class AddProjectTest extends BaseFixtureFeature[AddProjectFixture] {
       val response = fixture.run(request)
 
       Then("it should NOT pass the validation and yield Duplicate error")
-      response.result should containsFailedValidation("name", Duplicated)
+      response should containsFailedValidation("name", Duplicated)
     }
 
     Scenario("Add project with duplicate name of other user's project") { fixture =>
@@ -95,7 +96,7 @@ class AddProjectTest extends BaseFixtureFeature[AddProjectFixture] {
       val response = fixture.run(request)
 
       Then("it should pass the validation")
-      response.result.success.value shouldBe a[Project]
+      response.success.value.result shouldBe a[Project]
     }
 
     Scenario("Add project with duplicate name of logged user's trahsed project") { fixture =>
@@ -107,7 +108,7 @@ class AddProjectTest extends BaseFixtureFeature[AddProjectFixture] {
       val response = fixture.run(request)
 
       Then("it should pass the validation")
-      response.result.success.value shouldBe a[Project]
+      response.success.value.result shouldBe a[Project]
     }
 
     Scenario("Validation passed") { fixture =>
@@ -118,7 +119,7 @@ class AddProjectTest extends BaseFixtureFeature[AddProjectFixture] {
       val response = fixture.run(request)
 
       Then("it should pass the validation")
-      response.result.success.value shouldBe a[Project]
+      response.success.value.result shouldBe a[Project]
     }
   }
 
@@ -137,7 +138,7 @@ class AddProjectTest extends BaseFixtureFeature[AddProjectFixture] {
       val response = fixture.run(request)
 
       Then("it should returned a project with correct data")
-      val returnedProject = response.result.success.value
+      val returnedProject = response.success.value.result
       inside(returnedProject) { case Project(uuid, userUUID, name, note, parentProjectUUID, status, isTrashed, createTime, updateTime) =>
         uuid shouldBe request.uuid
         userUUID shouldBe request.loggedInUser.uuid
@@ -155,8 +156,8 @@ class AddProjectTest extends BaseFixtureFeature[AddProjectFixture] {
       projectInStorage.value shouldBe returnedProject
 
       And("generate correct journal entry")
-      response.journals shouldBe List(
-        Journal(fixture.generator.randomUUID, request.loggedInUser.uuid, request, None, returnedProject, fixture.generator.currentTime)
+      response.success.value.journals.changes shouldBe List(
+        Change(fixture.generator.randomUUID, None, returnedProject, fixture.generator.currentTime)
       )
     }
 
@@ -175,7 +176,7 @@ class AddProjectTest extends BaseFixtureFeature[AddProjectFixture] {
       val response = fixture.run(request)
 
       Then("it should returned a project with a parent project")
-      val returnedProject = response.result.success.value
+      val returnedProject = response.success.value.result
       returnedProject.parentProjectUUID shouldBe Some(userProject.uuid)
 
       And("store it to storage")
@@ -183,8 +184,8 @@ class AddProjectTest extends BaseFixtureFeature[AddProjectFixture] {
       projectInStorage.value shouldBe returnedProject
 
       And("generate correct journal entry")
-      response.journals shouldBe List(
-        Journal(fixture.generator.randomUUID, request.loggedInUser.uuid, request, None, returnedProject, fixture.generator.currentTime)
+      response.success.value.journals.changes shouldBe List(
+        Change(fixture.generator.randomUUID, None, returnedProject, fixture.generator.currentTime)
       )
     }
   }

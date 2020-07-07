@@ -7,9 +7,9 @@ import scala.language.reflectiveCalls
 import moe.brianhsu.maidroidtask.entity._
 
 class DoNothingUseCase extends UseCase[Unit] {
+  override def groupedJournal: GroupedJournal = null
   override def validations: List[Validations.ValidationRules] = Nil
   override def doAction(): Unit = {}
-  override def journals: List[Journal] = Nil
 }
 
 class UseCaseValidationSpec extends AnyFeatureSpec with GivenWhenThen {

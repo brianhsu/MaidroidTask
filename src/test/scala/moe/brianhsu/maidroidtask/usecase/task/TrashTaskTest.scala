@@ -3,9 +3,10 @@ package moe.brianhsu.maidroidtask.usecase.task
 import java.time.LocalDateTime
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Journal, Task}
+import moe.brianhsu.maidroidtask.entity.{Change, Task}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, NotFound}
+import moe.brianhsu.maidroidtask.usecase.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 class TrashTaskFixture extends BaseFixture {
@@ -16,7 +17,7 @@ class TrashTaskFixture extends BaseFixture {
   val otherUserTask = taskRepo.write.insert(Task(otherUserTaskUUID, otherUser.uuid, "Task of Other User", createTime = fixtureCreateTime, updateTime = fixtureCreateTime))
   val userTask = taskRepo.write.insert(Task(taskUUID, loggedInUser.uuid, "Task of LoggedIn User", createTime = fixtureCreateTime, updateTime = fixtureCreateTime))
 
-  def run(request: TrashTask.Request): UseCaseExecutorResult[Task] = {
+  def run(request: TrashTask.Request): ResultHolder[Task] = {
     val useCase = new TrashTask(request)
     useCase.execute()
   }
@@ -40,7 +41,7 @@ class TrashTaskTest extends BaseFixtureFeature[TrashTaskFixture] {
       val response = fixture.run(request)
 
       Then("it should NOT pass the validation")
-      response.result should containsFailedValidation("uuid", NotFound)
+      response should containsFailedValidation("uuid", NotFound)
     }
 
     Scenario("Delete task does not belong to the logged in user") { fixture =>
@@ -51,7 +52,7 @@ class TrashTaskTest extends BaseFixtureFeature[TrashTaskFixture] {
       val response = fixture.run(request)
 
       Then("it should NOT pass the validation")
-      response.result should containsFailedValidation("uuid", AccessDenied)
+      response should containsFailedValidation("uuid", AccessDenied)
     }
 
   }
@@ -65,22 +66,15 @@ class TrashTaskTest extends BaseFixtureFeature[TrashTaskFixture] {
       val response = fixture.run(request)
 
       Then("it should mark as trashed in storage")
-      val task = response.result.success.value
+      val task = response.success.value.result
       val taskInStorage = fixture.taskRepo.read.findByUUID(task.uuid).value
       taskInStorage shouldBe task
       task.isTrashed shouldBe true
       task.updateTime shouldBe fixture.generator.currentTime
 
       And("generate correct journal entry")
-      response.journals should contain theSameElementsInOrderAs List(
-        Journal(
-          fixture.generator.randomUUID,
-          fixture.loggedInUser.uuid,
-          request,
-          Some(fixture.userTask),
-          taskInStorage,
-          fixture.generator.currentTime
-        )
+      response.success.value.journals.changes should contain theSameElementsInOrderAs List(
+        Change(fixture.generator.randomUUID, Some(fixture.userTask), taskInStorage, fixture.generator.currentTime)
       )
     }
   }

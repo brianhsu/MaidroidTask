@@ -2,7 +2,7 @@ package moe.brianhsu.maidroidtask.usecase.project
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Journal, Project, User}
+import moe.brianhsu.maidroidtask.entity.{GroupedJournal, Change, Project, User}
 import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
 import moe.brianhsu.maidroidtask.gateway.repo.ProjectRepo
 import moe.brianhsu.maidroidtask.usecase.{UseCase, UseCaseRequest}
@@ -33,11 +33,13 @@ class EditProject(request: EditProject.Request)(implicit projectRepo: ProjectRep
     updatedProject.get
   }
 
-  override def journals: List[Journal] = updatedProject.map { project =>
-    Journal(
-      generator.randomUUID, request.loggedInUser.uuid,
-      request, oldProject, project, generator.currentTime
-    )
+  override def groupedJournal: GroupedJournal = GroupedJournal(
+    generator.randomUUID, request.loggedInUser.uuid,
+    request, journals, generator.currentTime
+  )
+
+  private def journals: List[Change] = updatedProject.map { project =>
+    Change(generator.randomUUID, oldProject, project, generator.currentTime)
   }.toList
 
   override def validations: List[ValidationRules] = {

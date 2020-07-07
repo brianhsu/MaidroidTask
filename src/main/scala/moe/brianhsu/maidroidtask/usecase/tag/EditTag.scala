@@ -2,7 +2,7 @@ package moe.brianhsu.maidroidtask.usecase.tag
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Journal, Tag, User}
+import moe.brianhsu.maidroidtask.entity.{GroupedJournal, Change, Tag, User}
 import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
 import moe.brianhsu.maidroidtask.gateway.repo.TagRepo
 import moe.brianhsu.maidroidtask.usecase.{UseCase, UseCaseRequest}
@@ -31,8 +31,13 @@ class EditTag(request: EditTag.Request)(implicit tagRepo: TagRepo, generator: Dy
     updatedTag.get
   }
 
-  override def journals: List[Journal] = updatedTag.map(tag =>
-    Journal(generator.randomUUID, request.loggedInUser.uuid, request, oldTag, tag, generator.currentTime)
+  override def groupedJournal: GroupedJournal = GroupedJournal(
+    generator.randomUUID, request.loggedInUser.uuid,
+    request, journals, generator.currentTime
+  )
+
+  private def journals: List[Change] = updatedTag.map(tag =>
+    Change(generator.randomUUID, oldTag, tag, generator.currentTime)
   ).toList
   
   override def validations: List[ValidationRules] = {

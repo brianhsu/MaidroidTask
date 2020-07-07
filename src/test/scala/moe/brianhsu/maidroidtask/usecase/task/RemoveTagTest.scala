@@ -2,9 +2,10 @@ package moe.brianhsu.maidroidtask.usecase.task
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Journal, Task}
+import moe.brianhsu.maidroidtask.entity.{Change, Task}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, NotFound}
+import moe.brianhsu.maidroidtask.usecase.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 import scala.util.Try
@@ -19,7 +20,7 @@ class RemoveTagFixture extends BaseFixture {
   val userTask = createTask(loggedInUser, "Task1")
   val otherUserTask = createTask(otherUser, "Other User Task")
 
-  def run(request: RemoveTag.Request): UseCaseExecutorResult[Task] = {
+  def run(request: RemoveTag.Request): ResultHolder[Task] = {
     val useCase = new RemoveTag(request)
     useCase.execute()
   }
@@ -37,7 +38,7 @@ class RemoveTagTest extends BaseFixtureFeature[RemoveTagFixture] {
       val response = fixture.run(request)
 
       Then("it should not pass the validation, and yield NotFound error")
-      response.result should containsFailedValidation("uuid", NotFound)
+      response should containsFailedValidation("uuid", NotFound)
     }
 
     Scenario("Remove a non-exist tag from a task") { fixture =>
@@ -49,7 +50,7 @@ class RemoveTagTest extends BaseFixtureFeature[RemoveTagFixture] {
       val response = fixture.run(request)
 
       Then("it should not pass the validation, and yield NotFound error")
-      response.result should containsFailedValidation("tagUUID", NotFound)
+      response should containsFailedValidation("tagUUID", NotFound)
     }
 
     Scenario("Remove a tag from other user's task") { fixture =>
@@ -60,7 +61,7 @@ class RemoveTagTest extends BaseFixtureFeature[RemoveTagFixture] {
       val response = fixture.run(request)
 
       Then("it should not pass the validation, and yield AccessDenied error")
-      response.result should containsFailedValidation("uuid", AccessDenied)
+      response should containsFailedValidation("uuid", AccessDenied)
     }
 
     Scenario("Remove other users tag from a task") { fixture =>
@@ -71,7 +72,7 @@ class RemoveTagTest extends BaseFixtureFeature[RemoveTagFixture] {
       val response = fixture.run(request)
 
       Then("it should not pass the validation, and yield AccessDeined error")
-      response.result should containsFailedValidation("tagUUID", AccessDenied)
+      response should containsFailedValidation("tagUUID", AccessDenied)
     }
 
     Scenario("Validation passed") { fixture =>
@@ -82,7 +83,7 @@ class RemoveTagTest extends BaseFixtureFeature[RemoveTagFixture] {
       val response = fixture.run(request)
 
       Then("it should pass the validation")
-      response.result.success.value shouldBe a[Task]
+      response.success.value.result shouldBe a[Task]
     }
   }
 
@@ -96,7 +97,7 @@ class RemoveTagTest extends BaseFixtureFeature[RemoveTagFixture] {
 
       Then("it should returned the task untouched")
       val response = fixture.run(request)
-      val returnedTask = response.result.success.value
+      val returnedTask = response.success.value.result
       returnedTask shouldBe task
 
       And("the task in storage should not be changed")
@@ -104,7 +105,7 @@ class RemoveTagTest extends BaseFixtureFeature[RemoveTagFixture] {
       taskInStorage shouldBe task
 
       And("there shouldn't have any journal")
-      response.journals shouldBe Nil
+      response.success.value.journals.changes shouldBe Nil
     }
 
     Scenario("Remove a tag from a task not does not have the target tag") { fixture =>
@@ -120,7 +121,7 @@ class RemoveTagTest extends BaseFixtureFeature[RemoveTagFixture] {
 
       Then("it should returned the task untouched")
       val response = fixture.run(request)
-      val returnedTask = response.result.success.value
+      val returnedTask = response.success.value.result
       returnedTask shouldBe task
 
       And("the task in storage should not be changed")
@@ -128,7 +129,7 @@ class RemoveTagTest extends BaseFixtureFeature[RemoveTagFixture] {
       taskInStorage shouldBe task
 
       And("there shouldn't have any journal")
-      response.journals shouldBe Nil
+      response.success.value.journals.changes shouldBe Nil
     }
 
     Scenario("Remove a tag from a task has the target tag") { fixture =>
@@ -144,7 +145,7 @@ class RemoveTagTest extends BaseFixtureFeature[RemoveTagFixture] {
 
       Then("it should returned the task without the target task")
       val response = fixture.run(request)
-      val returnedTask = response.result.success.value
+      val returnedTask = response.success.value.result
       returnedTask.tags should contain theSameElementsAs List(fixture.userTag1.uuid, fixture.userTag2.uuid)
 
       And("the task in storage should be updated")
@@ -153,15 +154,8 @@ class RemoveTagTest extends BaseFixtureFeature[RemoveTagFixture] {
       taskInStorage.updateTime shouldBe fixture.generator.currentTime
 
       And("generate correct journal entry")
-      response.journals shouldBe List(
-        Journal(
-          fixture.generator.randomUUID,
-          request.loggedInUser.uuid,
-          request,
-          Some(task),
-          returnedTask,
-          fixture.generator.currentTime
-        )
+      response.success.value.journals.changes shouldBe List(
+        Change(fixture.generator.randomUUID, Some(task), returnedTask, fixture.generator.currentTime)
       )
 
     }

@@ -3,16 +3,17 @@ package moe.brianhsu.maidroidtask.usecase.project
 import java.time.LocalDateTime
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Project, Journal}
+import moe.brianhsu.maidroidtask.entity.{Change, Project}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, NotFound}
+import moe.brianhsu.maidroidtask.usecase.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 class EditProjectFixture extends BaseFixture {
   val userProject = createProject(loggedInUser, "Some Project")
   val otherUserProject = createProject(otherUser, "OtherUserProject")
 
-  def run(request: EditProject.Request): UseCaseExecutorResult[Project] = {
+  def run(request: EditProject.Request): ResultHolder[Project] = {
     val useCase = new EditProject(request)
     useCase.execute()
   }
@@ -31,7 +32,7 @@ class EditProjectTest extends BaseFixtureFeature[EditProjectFixture] {
       val response = fixture.run(request)
 
       Then("it should NOT pass the validation and yield NotFound error")
-      response.result should containsFailedValidation("uuid", NotFound)
+      response should containsFailedValidation("uuid", NotFound)
     }
 
     Scenario("Edit a project that belongs to other use") { fixture =>
@@ -42,7 +43,7 @@ class EditProjectTest extends BaseFixtureFeature[EditProjectFixture] {
       val response = fixture.run(request)
 
       Then("it should NOT pass the validation and yield AccessDenied error")
-      response.result should containsFailedValidation("uuid", AccessDenied)
+      response should containsFailedValidation("uuid", AccessDenied)
     }
 
     Scenario("Edit a project that has duplicate name for same user") { fixture =>
@@ -53,7 +54,7 @@ class EditProjectTest extends BaseFixtureFeature[EditProjectFixture] {
       val response = fixture.run(request)
 
       Then("it should NOT pass the validation and yield Duplicate error")
-      response.result should containsFailedValidation("name", Duplicated)
+      response should containsFailedValidation("name", Duplicated)
     }
 
     Scenario("Edit a project that child-project does not exist") { fixture =>
@@ -71,7 +72,7 @@ class EditProjectTest extends BaseFixtureFeature[EditProjectFixture] {
       val response = fixture.run(request)
 
       Then("it should NOT pass the validation and yield NotFound error")
-      response.result should containsFailedValidation("parentProjectUUID", NotFound)
+      response should containsFailedValidation("parentProjectUUID", NotFound)
     }
 
     Scenario("Edit a project that child-project is belongs to other user") { fixture =>
@@ -87,7 +88,7 @@ class EditProjectTest extends BaseFixtureFeature[EditProjectFixture] {
       val response = fixture.run(request)
 
       Then("it should NOT pass the validation and yield AccessDenied error")
-      response.result should containsFailedValidation("parentProjectUUID", AccessDenied)
+      response should containsFailedValidation("parentProjectUUID", AccessDenied)
     }
 
     Scenario("Edit a project that name is duplicated with trashed project") { fixture =>
@@ -105,7 +106,7 @@ class EditProjectTest extends BaseFixtureFeature[EditProjectFixture] {
       val response = fixture.run(request)
 
       Then("it should pass the validation")
-      response.result.success.value shouldBe a[Project]
+      response.success.value.result shouldBe a[Project]
     }
 
     Scenario("Edit a project that name is duplicate with other user's project") { fixture =>
@@ -123,7 +124,7 @@ class EditProjectTest extends BaseFixtureFeature[EditProjectFixture] {
       val response = fixture.run(request)
 
       When("it should pass the validation")
-      response.result.success.value shouldBe a[Project]
+      response.success.value.result shouldBe a[Project]
     }
   }
 
@@ -146,7 +147,7 @@ class EditProjectTest extends BaseFixtureFeature[EditProjectFixture] {
       val response = fixture.run(request)
 
       Then("it should return edited project")
-      val returnedProject = response.result.success.value
+      val returnedProject = response.success.value.result
       inside(returnedProject) { case Project(uuid, userUUID, name, note, parentProjectUUID, status, isTrashed, createTime, updateTime) =>
         uuid shouldBe request.uuid
         userUUID shouldBe fixture.loggedInUser.uuid
@@ -160,15 +161,8 @@ class EditProjectTest extends BaseFixtureFeature[EditProjectFixture] {
       projectInStorage shouldBe returnedProject
 
       And("generate correct journal entry")
-      response.journals shouldBe List(
-        Journal(
-          fixture.generator.randomUUID,
-          fixture.loggedInUser.uuid,
-          request,
-          Some(fixture.userProject),
-          projectInStorage,
-          fixture.generator.currentTime
-        )
+      response.success.value.journals.changes shouldBe List(
+        Change(fixture.generator.randomUUID, Some(fixture.userProject), projectInStorage, fixture.generator.currentTime)
       )
     }
 
@@ -194,7 +188,7 @@ class EditProjectTest extends BaseFixtureFeature[EditProjectFixture] {
       val response = fixture.run(request)
 
       Then("it should return edited project and only the requested fields are changed")
-      val returnedProject = response.result.success.value
+      val returnedProject = response.success.value.result
       inside(returnedProject) { case Project(uuid, userUUID, name, note, parentProjectUUID, status, isTrashed, createTime, updateTime) =>
         uuid shouldBe request.uuid
         userUUID shouldBe fixture.loggedInUser.uuid
@@ -210,15 +204,8 @@ class EditProjectTest extends BaseFixtureFeature[EditProjectFixture] {
       projectInStorage shouldBe returnedProject
 
       And("generate correct journal entry")
-      response.journals shouldBe List(
-        Journal(
-          fixture.generator.randomUUID,
-          fixture.loggedInUser.uuid,
-          request,
-          Some(myProject),
-          projectInStorage,
-          fixture.generator.currentTime
-        )
+      response.success.value.journals.changes shouldBe List(
+        Change(fixture.generator.randomUUID, Some(myProject), projectInStorage, fixture.generator.currentTime)
       )
 
     }

@@ -3,9 +3,10 @@ package moe.brianhsu.maidroidtask.usecase.tag
 import java.time.LocalDateTime
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Journal, Tag}
+import moe.brianhsu.maidroidtask.entity.{Change, Tag}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, HasChildren, NotFound}
+import moe.brianhsu.maidroidtask.usecase.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 class TrashTagFixture extends BaseFixture {
@@ -20,7 +21,7 @@ class TrashTagFixture extends BaseFixture {
   tagRepo.write.insert(parentTag)
   tagRepo.write.insert(childTag)
 
-  def run(request: TrashTag.Request): UseCaseExecutorResult[Tag] = {
+  def run(request: TrashTag.Request): ResultHolder[Tag] = {
     val useCase = new TrashTag(request)
     useCase.execute()
   }
@@ -39,7 +40,7 @@ class TrashTagTest extends BaseFixtureFeature[TrashTagFixture] {
       val response = fixture.run(request)
 
       Then("it should NOT pass the validation and yield NotFound error")
-      response.result should containsFailedValidation("uuid", NotFound)
+      response should containsFailedValidation("uuid", NotFound)
     }
 
     Scenario("Trash tag belongs to others") { fixture =>
@@ -50,7 +51,7 @@ class TrashTagTest extends BaseFixtureFeature[TrashTagFixture] {
       val response = fixture.run(request)
 
       Then("it should NOT pass the validation and yield AccessDenied error")
-      response.result should containsFailedValidation("uuid", AccessDenied)
+      response should containsFailedValidation("uuid", AccessDenied)
     }
 
     Scenario("Trash tag that has child tags") { fixture =>
@@ -61,7 +62,7 @@ class TrashTagTest extends BaseFixtureFeature[TrashTagFixture] {
       val response = fixture.run(request)
 
       Then("it should NOT pass the validation and yield HasChildren error")
-      response.result should containsFailedValidation("uuid", HasChildren)
+      response should containsFailedValidation("uuid", HasChildren)
     }
 
     Scenario("Trash tag belongs to logged in user") { fixture =>
@@ -72,7 +73,7 @@ class TrashTagTest extends BaseFixtureFeature[TrashTagFixture] {
       val response = fixture.run(request)
 
       Then("it should pass the validation")
-      response.result.success.value shouldBe a[Tag]
+      response.success.value.result shouldBe a[Tag]
     }
   }
 
@@ -85,7 +86,7 @@ class TrashTagTest extends BaseFixtureFeature[TrashTagFixture] {
       val response = fixture.run(request)
 
       Then("it should returned trashed tag")
-      val returnedTag = response.result.success.value
+      val returnedTag = response.success.value.result
       inside(returnedTag) { case Tag(uuid, userUUID, name, parentTagUUID, isTrashed, createTime, updateTime) =>
         uuid shouldBe request.uuid
         userUUID shouldBe request.loggedInUser.uuid
@@ -101,15 +102,8 @@ class TrashTagTest extends BaseFixtureFeature[TrashTagFixture] {
       tagInStorage shouldBe returnedTag
 
       And("generate the correct journal entry")
-      response.journals shouldBe List(
-        Journal(
-          fixture.generator.randomUUID,
-          request.loggedInUser.uuid,
-          request,
-          Some(fixture.childTag),
-          tagInStorage,
-          fixture.generator.currentTime
-        )
+      response.success.value.journals.changes shouldBe List(
+        Change(fixture.generator.randomUUID, Some(fixture.childTag), tagInStorage, fixture.generator.currentTime)
       )
     }
   }
@@ -125,7 +119,7 @@ class TrashTagTest extends BaseFixtureFeature[TrashTagFixture] {
       When("we request to trash the tag")
       val request = TrashTag.Request(fixture.loggedInUser, tag.uuid)
       val response = fixture.run(request)
-      response.result.isSuccess shouldBe true
+      response.isSuccess shouldBe true
 
       Then("the task should also be updated, and contains no tag")
       val updatedTask = fixture.taskRepo.read.findByUUID(task.uuid).value
@@ -133,7 +127,7 @@ class TrashTagTest extends BaseFixtureFeature[TrashTagFixture] {
       updatedTask.updateTime shouldBe fixture.generator.currentTime
 
       And("The journal log should contains the entry that update the task")
-      response.journals.map(_.request.uuid) should contain (task.uuid)
+      response.success.value.journals.changes.map(_.current.uuid) should contain (task.uuid)
     }
 
     Scenario("One task has multiple tags") { fixture =>
@@ -152,7 +146,7 @@ class TrashTagTest extends BaseFixtureFeature[TrashTagFixture] {
       When("we request to trash the tag")
       val request = TrashTag.Request(fixture.loggedInUser, tagToBeTrashed.uuid)
       val response = fixture.run(request)
-      response.result.isSuccess shouldBe true
+      response.isSuccess shouldBe true
 
       Then("the task should also be updated, and contains tags that is not trashed")
       val updatedTask = fixture.taskRepo.read.findByUUID(task.uuid).value
@@ -160,7 +154,7 @@ class TrashTagTest extends BaseFixtureFeature[TrashTagFixture] {
       updatedTask.updateTime shouldBe fixture.generator.currentTime
 
       And("The journal log should contains the entry that update the task")
-      response.journals.map(_.request.uuid) should contain (task.uuid)
+      response.success.value.journals.changes.map(_.current.uuid) should contain (task.uuid)
     }
 
     Scenario("Multiple tasks has multple tags") { fixture =>
@@ -189,7 +183,7 @@ class TrashTagTest extends BaseFixtureFeature[TrashTagFixture] {
       When("we request to trash the tag")
       val request = TrashTag.Request(fixture.loggedInUser, tagToBeTrashed.uuid)
       val response = fixture.run(request)
-      response.result.isSuccess shouldBe true
+      response.isSuccess shouldBe true
 
       Then("all task should also be updated, and contains tags that is not trashed")
       val updatedTask1 = fixture.taskRepo.read.findByUUID(task1.uuid).value
@@ -200,7 +194,7 @@ class TrashTagTest extends BaseFixtureFeature[TrashTagFixture] {
       updatedTask3.tags should contain theSameElementsAs List(anotherTag.uuid)
 
       And("The journal log should contains the entry that update the task")
-      response.journals.map(_.request.uuid) should contain.allOf(updatedTask1.uuid, updatedTask2.uuid, updatedTask3.uuid)
+      response.success.value.journals.changes.map(_.current.uuid) should contain.allOf(updatedTask1.uuid, updatedTask2.uuid, updatedTask3.uuid)
     }
   }
 }

@@ -2,14 +2,15 @@ package moe.brianhsu.maidroidtask.usecase
 
 import Validations._
 import moe.brianhsu.maidroidtask.entity._
+import moe.brianhsu.maidroidtask.usecase.types.ResultHolder
 
 trait UseCase[T] {
 
   def doAction(): T
-  def journals: List[Journal]
   def validations: List[ValidationRules]
+  def groupedJournal: GroupedJournal
 
-  def execute()(implicit executor: UseCaseExecutor): UseCaseExecutorResult[T] = executor.runUseCase(this)
+  def execute()(implicit executor: UseCaseExecutor): ResultHolder[T] = executor.runUseCase(this)
 
   def validate(): List[FailedValidation] = {
     validations.flatMap { validation => 

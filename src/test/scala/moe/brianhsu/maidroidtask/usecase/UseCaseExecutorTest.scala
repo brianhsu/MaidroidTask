@@ -24,18 +24,22 @@ class UseCaseExecutorTest extends AnyFeatureSpec with GivenWhenThen with Matcher
 
     Scenario("Run UseCase without any error") {
       Given("A UseCase that should not have any error")
+      object DummyRequest extends UseCaseRequest {
+        override def uuid: UUID = UUID.randomUUID
+      }
 
       val useCase = new UseCase[Int] {
         override def validations = Nil
         override def doAction() = 100
-        override def journals = Nil
+        override def groupedJournal: GroupedJournal = GroupedJournal(UUID.randomUUID, UUID.randomUUID, DummyRequest, Nil, LocalDateTime.now)
       }
 
       When("call execute() for the usecase object")
       val result = useCase.execute()
+      println(result.get)
 
       Then("it should return Success contains the correct value")
-      result.result.success.value shouldBe 100
+      result.success.value.result shouldBe 100
     }
 
     Scenario("Run UseCase throw runtime error") {
@@ -43,7 +47,7 @@ class UseCaseExecutorTest extends AnyFeatureSpec with GivenWhenThen with Matcher
 
       val useCase = new UseCase[Int] {
         override def validations = Nil
-        override def journals = Nil
+        override def groupedJournal: GroupedJournal = null
         override def doAction() = {
           throw new Exception("Error!")
         }
@@ -53,14 +57,14 @@ class UseCaseExecutorTest extends AnyFeatureSpec with GivenWhenThen with Matcher
       val result = useCase.execute()
 
       Then("it will return Failure with correct exception")
-      result.result.failure.exception should have message "Error!"
+      result.failure.exception should have message "Error!"
     }
 
     Scenario("Run UseCase that has validation errors") {
       Given("A UseCase that have validation errors")
 
       val useCase = new UseCase[Int] {
-        override def journals = Nil
+        override def groupedJournal: GroupedJournal = null
         override def validations = createValidator(
           "someValue", 100, 
           (x: Int) => if (x < 0) None else Some(IsMalformed),
@@ -73,8 +77,8 @@ class UseCaseExecutorTest extends AnyFeatureSpec with GivenWhenThen with Matcher
       val result = useCase.execute()
 
       Then("the validation result should be empty since it does not run validate")
-      result.result.failure.exception should have message "Validate failed."
-      result.result.failure.exception.asInstanceOf[ValidationErrors].failedValidations should contain theSameElementsInOrderAs List(
+      result.failure.exception should have message "Validate failed."
+      result.failure.exception.asInstanceOf[ValidationErrors].failedValidations should contain theSameElementsInOrderAs List(
          FailedValidation("someValue", IsMalformed),
          FailedValidation("someValue", AccessDenied)
       )
@@ -83,34 +87,40 @@ class UseCaseExecutorTest extends AnyFeatureSpec with GivenWhenThen with Matcher
 
   Feature("Run UseCase with UseCaseExecutor to log journal entry") {
     implicit val executor = new UseCaseExecutor {
-      var loggedJournals: List[Journal] = Nil
+      var loggedJournals: List[Change] = Nil
 
-      override def appendJournals(journals: List[Journal]) = {
+      override def appendJournals(journals: List[Change]) = {
         this.loggedJournals = journals
       }
     }
 
     Scenario("Run UseCase with journals") {
       Given("a bunch of journals")
-      case object InsertedEntity extends Entity
-      case object UpdatedEntity extends Entity
-      case object DeletedEntity extends Entity
+      case object InsertedEntity extends Entity {
+        override def uuid: UUID = UUID.randomUUID
+      }
+      case object UpdatedEntity extends Entity {
+        override def uuid: UUID = UUID.randomUUID
+      }
+      case object DeletedEntity extends Entity {
+        override def uuid: UUID = UUID.randomUUID()
+      }
       case object DummyRequest extends UseCaseRequest {
         override def uuid: UUID = UUID.randomUUID
       }
       val historyUUID = UUID.fromString("00b1bdbe-e66d-49fb-b7b9-4d74f00dc300")
       val userUUID = UUID.fromString("a45ed52e-6c4f-4b3b-9b75-ddcf4cbdcc82")
       val journalList = List(
-        Journal(historyUUID, userUUID, DummyRequest, None, InsertedEntity, LocalDateTime.parse("2020-07-01T10:00:00")),
-        Journal(historyUUID, userUUID, DummyRequest, Some(InsertedEntity), UpdatedEntity, LocalDateTime.parse("2020-07-01T11:00:00")),
-        Journal(historyUUID, userUUID, DummyRequest, Some(UpdatedEntity), DeletedEntity, LocalDateTime.parse("2020-07-01T11:00:00"))
+        Change(historyUUID, None, InsertedEntity, LocalDateTime.parse("2020-07-01T10:00:00")),
+        Change(historyUUID, Some(InsertedEntity), UpdatedEntity, LocalDateTime.parse("2020-07-01T11:00:00")),
+        Change(historyUUID, Some(UpdatedEntity), DeletedEntity, LocalDateTime.parse("2020-07-01T11:00:00"))
       )
 
       And("a use case with journals")
       val useCase = new UseCase[Int] {
+        override def groupedJournal: GroupedJournal = GroupedJournal(UUID.randomUUID, userUUID, DummyRequest, journalList, LocalDateTime.now)
         override def validations = Nil
         override def doAction() = 100
-        override def journals: List[Journal] = journalList
       }
 
       When("execute with UseCaseExecutor")

@@ -5,7 +5,7 @@ import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, ScheduledAt, Tag, Task}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
-import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, NotFound, Required}
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, NotFound, Required}
 import moe.brianhsu.maidroidtask.usecase.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
@@ -96,6 +96,18 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
       response should containsFailedValidation("description", Required)
     }
 
+    Scenario("Edit task that is already trashed") { fixture =>
+      Given("user request to edit a task that is already trashed")
+      val task = fixture.createTask(fixture.loggedInUser, "TrashedTask", isTrashed = true)
+      val request = EditTask.Request(fixture.loggedInUser, task.uuid, description = Some("NewTitle"))
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass the validation and yield AlreadyTrashed error")
+      response should containsFailedValidation("uuid", AlreadyTrashed)
+    }
+
     Scenario("Edit task that new tags has non-exist tag UUID") { fixture =>
       Given("user request to edit a task, and new tags has non-exist tag UUID")
       val nonExistUUID = UUID.randomUUID
@@ -111,6 +123,23 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
 
       Then("is should NOT pass the validation and yield NotFound error")
       response should containsFailedValidation("tags", NotFound)
+    }
+
+    Scenario("Edit task that new tags has trashed tag UUID") { fixture =>
+      Given("user request to edit a task, and new tags has trashed tag UUID")
+      val trashedTag = fixture.createTag(fixture.loggedInUser, "TrashedTag", isTrashed = true)
+      val newTagList = List(fixture.userTag.uuid, trashedTag.uuid)
+      val request = EditTask.Request(
+        fixture.loggedInUser,
+        fixture.task1.uuid,
+        tags = Some(newTagList)
+      )
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("is should NOT pass the validation and yield NotFound error")
+      response should containsFailedValidation("tags", AlreadyTrashed)
     }
 
     Scenario("Edit task that new tags belongs to other user") { fixture =>

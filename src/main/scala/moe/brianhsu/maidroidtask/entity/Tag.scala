@@ -8,4 +8,4 @@ case class Tag(uuid: UUID, userUUID: UUID,
                parentTagUUID: Option[UUID],
                isTrashed: Boolean = false,
                createTime: LocalDateTime,
-               updateTime: LocalDateTime) extends EntityWithUserId with NamedEntity
+               updateTime: LocalDateTime) extends EntityWithUserId with NamedEntity with TrashableEntity

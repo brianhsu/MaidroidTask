@@ -17,4 +17,4 @@ case class Project(uuid: UUID, userUUID: UUID,
                    status: Project.Status,
                    isTrashed: Boolean,
                    createTime: LocalDateTime,
-                   updateTime: LocalDateTime) extends EntityWithUserId with NamedEntity
+                   updateTime: LocalDateTime) extends EntityWithUserId with NamedEntity with TrashableEntity

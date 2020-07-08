@@ -51,14 +51,16 @@ class EditProject(request: EditProject.Request)(implicit projectRepo: ProjectRep
     groupByField(
       createValidator("uuid", request.uuid,
         EntityValidator.exist[Project],
-        EntityValidator.belongToUser[Project](request.loggedInUser)
+        EntityValidator.belongToUser[Project](request.loggedInUser),
+        EntityValidator.notTrashed[Project]
       ),
       createValidator("name", request.name,
         option(EntityValidator.noSameNameForSameUser[Project](request.loggedInUser))
       ),
       createValidator("parentProjectUUID", request.parentProjectUUID,
         option(option(EntityValidator.exist[Project])),
-        option(option(EntityValidator.belongToUser[Project](request.loggedInUser)))
+        option(option(EntityValidator.belongToUser[Project](request.loggedInUser))),
+        option(option(EntityValidator.notTrashed[Project]))
       )
     )
   }

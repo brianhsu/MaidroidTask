@@ -15,4 +15,4 @@ case class Task(uuid: UUID, userUUID: UUID,
                 isDone: Boolean = false,
                 isTrashed: Boolean = false,
                 createTime: LocalDateTime,
-                updateTime: LocalDateTime) extends EntityWithUserId
+                updateTime: LocalDateTime) extends EntityWithUserId with TrashableEntity

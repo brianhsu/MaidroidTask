@@ -40,11 +40,13 @@ class AppendTag(request: AppendTag.Request)
     groupByField(
       createValidator("uuid", request.uuid,
         EntityValidator.exist[Task],
-        EntityValidator.belongToUser[Task](request.loggedInUser)
+        EntityValidator.belongToUser[Task](request.loggedInUser),
+        EntityValidator.notTrashed[Task]
       ),
       createValidator("tagUUID", request.tagUUID,
         EntityValidator.exist[Tag],
-        EntityValidator.belongToUser[Tag](request.loggedInUser)
+        EntityValidator.belongToUser[Tag](request.loggedInUser),
+        EntityValidator.notTrashed[Tag]
       )
     )
   }

@@ -4,7 +4,7 @@ import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, Project}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
-import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, NotFound, Required}
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, Duplicated, NotFound, Required}
 import moe.brianhsu.maidroidtask.usecase.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
@@ -85,6 +85,22 @@ class AddProjectTest extends BaseFixtureFeature[AddProjectFixture] {
 
       Then("it should NOT pass the validation and yield Duplicate error")
       response should containsFailedValidation("name", Duplicated)
+    }
+
+    Scenario("Add a project with trashed parent project") { fixture =>
+      Given("user request to add a project with a trashed parent project")
+      val trashedProject = fixture.createProject(fixture.loggedInUser, "Trashed Project", isTrashed = true)
+      val request = AddProject.Request(
+        fixture.loggedInUser, UUID.randomUUID,
+        "NewProject",
+        parentProjectUUID = Some(trashedProject.uuid)
+      )
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass the validation and yield AlreadyTrashed")
+      response should containsFailedValidation("parentProjectUUID", AlreadyTrashed)
     }
 
     Scenario("Add project with duplicate name of other user's project") { fixture =>

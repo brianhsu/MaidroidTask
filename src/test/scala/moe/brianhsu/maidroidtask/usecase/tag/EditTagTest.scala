@@ -5,7 +5,7 @@ import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, Tag}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
-import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, NotFound, Required}
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, Duplicated, NotFound, Required}
 import moe.brianhsu.maidroidtask.usecase.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
@@ -100,6 +100,31 @@ class EditTagTest extends BaseFixtureFeature[EditTagFixture] {
 
       Then("it should NOT pass validation and yield NotFound error")
       response should containsFailedValidation("parentTagUUID", AccessDenied)
+    }
+
+    Scenario("The tag is already trashed") { fixture =>
+      Given("user request to edit a tag that is already trashed")
+      val trashedTag = fixture.createTag(fixture.loggedInUser, "TrashedTag", isTrashed = true)
+      val request = EditTag.Request(fixture.loggedInUser, trashedTag.uuid)
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass validation and yield AlreadyTrashed error")
+      response should containsFailedValidation("uuid", AlreadyTrashed)
+    }
+
+    Scenario("The parent tag is already trashed") { fixture =>
+      Given("user request to assign new parent tag that is already trashed")
+      val trashedTag = fixture.createTag(fixture.loggedInUser, "TrashedTag", isTrashed = true)
+      val tagToEdit = fixture.createTag(fixture.loggedInUser, "Tag to edit")
+      val request = EditTag.Request(fixture.loggedInUser, tagToEdit.uuid, parentTagUUID = Some(Some(trashedTag.uuid)))
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass validation and yield AlreadyTrashed error")
+      response should containsFailedValidation("parentTagUUID", AlreadyTrashed)
     }
 
     Scenario("Edit a tag, and name has duplication in system with other user") { fixture =>

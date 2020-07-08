@@ -27,11 +27,12 @@ class BaseFixture {
   val otherUser: User = User(UUID.randomUUID(), "other@example.com", "OtherUser")
 
   def createTag(user: User, name: String, isTrashed: Boolean = false) = tagRepo.write.insert(Tag(UUID.randomUUID, user.uuid, name, None, isTrashed, LocalDateTime.now, LocalDateTime.now))
-  def createTask(user: User, description: String, tags: List[UUID] = Nil) = {
+  def createTask(user: User, description: String, tags: List[UUID] = Nil, isTrashed: Boolean = false) = {
     taskRepo.write.insert(
       Task(
         UUID.randomUUID, user.uuid, description,
         tags = tags,
+        isTrashed = isTrashed,
         createTime = LocalDateTime.now,
         updateTime = LocalDateTime.now
       )

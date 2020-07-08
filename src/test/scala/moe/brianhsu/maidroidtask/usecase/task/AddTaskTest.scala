@@ -5,7 +5,7 @@ import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, ScheduledAt, Tag, Task}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
-import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, NotFound, Required}
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, Duplicated, NotFound, Required}
 import moe.brianhsu.maidroidtask.usecase.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
@@ -108,6 +108,40 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
 
       Then("it shouldn't pass the validation")
       response should containsFailedValidation("dependsOn", NotFound)
+    }
+
+    Scenario("Add task with trashed project") { fixutre =>
+      Given("user request to add task with trashed project")
+      val trashedProject = fixutre.createProject(fixutre.loggedInUser, "TrashedProject", isTrashed = true)
+      val request = AddTask.Request(
+        fixutre.loggedInUser, UUID.randomUUID,
+        "Description",
+        project = Some(trashedProject.uuid)
+      )
+
+      When("run the use case")
+      val response = fixutre.run(request)
+
+      Then("it should NOT pass the validation and yield AlreadyTrashed error")
+      response should containsFailedValidation("project", AlreadyTrashed)
+    }
+
+    Scenario("Add task with trashed tag") { fixture =>
+      Given("user request to add task with trashed tag")
+      val trashedTag = fixture.createTag(fixture.loggedInUser, "TrashedTag", isTrashed = true)
+      val nonTrashedTag = fixture.createTag(fixture.loggedInUser, "SomeTag")
+      val request = AddTask.Request(
+        fixture.loggedInUser,
+        UUID.randomUUID,
+        "Task",
+        tags = List(trashedTag.uuid, nonTrashedTag.uuid)
+      )
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass the validation and yield AlreadyTrashed error")
+      response should containsFailedValidation("tags", AlreadyTrashed)
     }
 
     Scenario("Validation passed") { fixture =>

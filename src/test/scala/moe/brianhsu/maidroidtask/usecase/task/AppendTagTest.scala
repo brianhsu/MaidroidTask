@@ -4,7 +4,7 @@ import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, Task}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
-import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, NotFound}
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, NotFound}
 import moe.brianhsu.maidroidtask.usecase.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
@@ -71,6 +71,31 @@ class AppendTagTest extends BaseFixtureFeature[AppendTagToTaskFixture] {
 
       Then("it should NOT pass the validation, and yield AccessDenied error")
       response should containsFailedValidation("tagUUID", AccessDenied)
+    }
+
+    Scenario("Append to a trashed task") { fixture =>
+      Given("user request to append a tag to a trashed task")
+      val trashedTask = fixture.createTask(fixture.loggedInUser, "TrashedTask", isTrashed = true)
+      val request = AppendTag.Request(fixture.loggedInUser, trashedTask.uuid, fixture.userTag1.uuid)
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass the validation, and yield AlreadyTrashed error")
+      response should containsFailedValidation("uuid", AlreadyTrashed)
+    }
+
+    Scenario("Append a trashed tag to a task") { fixture =>
+      Given("user request to append a trashed tag a task")
+      val task = fixture.createTask(fixture.loggedInUser, "SomeTask")
+      val trashedTag = fixture.createTag(fixture.loggedInUser, "TrashedTag", isTrashed = true)
+      val request = AppendTag.Request(fixture.loggedInUser, task.uuid, trashedTag.uuid)
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass the validation, and yield AlreadyTrashed error")
+      response should containsFailedValidation("tagUUID", AlreadyTrashed)
     }
 
     Scenario("Add tag to user's task") { fixture =>

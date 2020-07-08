@@ -51,10 +51,11 @@ class AddProject(request: AddProject.Request)(implicit projectRepo: ProjectRepo,
       createValidator("uuid", request.uuid, EntityValidator.noCollision[Project]),
       createValidator("name", request.name,
         GenericValidator.notEmpty,
-        EntityValidator.noSameNameForSameUser[Project](request.loggedInUser)
+        EntityValidator.noSameNameForSameUser[Project](request.loggedInUser),
       ),
       createValidator("parentProjectUUID", request.parentProjectUUID,
         option(EntityValidator.exist[Project]),
+        option(EntityValidator.notTrashed[Project]),
         option(EntityValidator.belongToUser[Project](request.loggedInUser))
       )
     )

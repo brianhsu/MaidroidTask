@@ -3,9 +3,9 @@ package moe.brianhsu.maidroidtask.usecase.task
 import java.time.LocalDateTime
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{GroupedJournal, Change, ScheduledAt, Tag, Task, User}
+import moe.brianhsu.maidroidtask.entity.{Change, GroupedJournal, Project, ScheduledAt, Tag, Task, User}
 import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
-import moe.brianhsu.maidroidtask.gateway.repo.{Readable, TagRepo, TaskRepo}
+import moe.brianhsu.maidroidtask.gateway.repo.{ProjectRepo, Readable, TagRepo, TaskRepo}
 import moe.brianhsu.maidroidtask.usecase.{UseCase, UseCaseRequest}
 import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
 import moe.brianhsu.maidroidtask.usecase.task.AddTask.Request
@@ -25,7 +25,10 @@ object AddTask {
                      isDone: Boolean = false) extends UseCaseRequest
 }
 
-class AddTask(request: Request)(implicit val taskRepo: TaskRepo, tagRepo: TagRepo, generator: DynamicDataGenerator) extends UseCase[Task] {
+class AddTask(request: Request)(implicit val taskRepo: TaskRepo,
+                                tagRepo: TagRepo,
+                                projectRepo: ProjectRepo,
+                                generator: DynamicDataGenerator) extends UseCase[Task] {
   private val task = Task(
     request.uuid, request.loggedInUser.uuid,
     request.description, request.note, request.project, request.tags,
@@ -52,6 +55,8 @@ class AddTask(request: Request)(implicit val taskRepo: TaskRepo, tagRepo: TagRep
 
     implicit val readable: Readable[Task] = taskRepo.read
     implicit val tagReadable: Readable[Tag] = tagRepo.read
+    implicit val projectReadable: Readable[Project] = projectRepo.read
+    import GenericValidator.option
 
     groupByField(
       createValidator("uuid", request.uuid, EntityValidator.noCollision[Task]),
@@ -59,8 +64,10 @@ class AddTask(request: Request)(implicit val taskRepo: TaskRepo, tagRepo: TagRep
       createValidator("dependsOn", request.dependsOn, EntityValidator.allExist[Task]),
       createValidator("tags", request.tags,
         EntityValidator.allExist[Tag],
-        EntityValidator.allBelongToUser[Tag](request.loggedInUser)
-      )
+        EntityValidator.allBelongToUser[Tag](request.loggedInUser),
+        EntityValidator.allNotTrashed[Tag]
+      ),
+      createValidator("project", request.project, option(EntityValidator.notTrashed[Project]))
     )
   }
 }

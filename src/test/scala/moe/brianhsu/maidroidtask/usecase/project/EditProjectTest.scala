@@ -5,7 +5,7 @@ import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, Project}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
-import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, NotFound}
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, Duplicated, NotFound}
 import moe.brianhsu.maidroidtask.usecase.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
@@ -89,6 +89,39 @@ class EditProjectTest extends BaseFixtureFeature[EditProjectFixture] {
 
       Then("it should NOT pass the validation and yield AccessDenied error")
       response should containsFailedValidation("parentProjectUUID", AccessDenied)
+    }
+
+    Scenario("Edit a project that is already trashed") { fixture =>
+      Given("user request to edit a project that is already trashed")
+      val trashedProject = fixture.createProject(fixture.loggedInUser, "TrashedProject", isTrashed = true)
+      val request = EditProject.Request(
+        fixture.loggedInUser,
+        trashedProject.uuid,
+        name = Some("NewProjectName")
+      )
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass the validation and yield AlreadyTrashed")
+      response should containsFailedValidation("uuid", AlreadyTrashed)
+    }
+
+    Scenario("Edit a project that parent project is already trashed") { fixture =>
+      Given("user request to edit a project with trashed parent project")
+      val trashedProject = fixture.createProject(fixture.loggedInUser, "TrashedProject", isTrashed = true)
+      val project = fixture.createProject(fixture.loggedInUser, "Project")
+      val request = EditProject.Request(
+        fixture.loggedInUser,
+        project.uuid,
+        parentProjectUUID = Some(Some(trashedProject.uuid))
+      )
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass the validation and yield AlreadyTrashed")
+      response should containsFailedValidation("parentProjectUUID", AlreadyTrashed)
     }
 
     Scenario("Edit a project that name is duplicated with trashed project") { fixture =>

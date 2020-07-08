@@ -4,7 +4,7 @@ import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, Task}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
-import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, NotFound}
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, NotFound}
 import moe.brianhsu.maidroidtask.usecase.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
@@ -73,6 +73,19 @@ class RemoveTagTest extends BaseFixtureFeature[RemoveTagFixture] {
 
       Then("it should not pass the validation, and yield AccessDeined error")
       response should containsFailedValidation("tagUUID", AccessDenied)
+    }
+
+    Scenario("Remove tags from a trashed tag") { fixture =>
+      Given("user request to remove a tag from trashed task")
+      val tag = fixture.createTag(fixture.loggedInUser, "Tag")
+      val task = fixture.createTask(fixture.loggedInUser, "SomeTask", List(tag.uuid), isTrashed = true)
+      val request = RemoveTag.Request(fixture.loggedInUser, task.uuid, tag.uuid)
+
+      When("run the request")
+      val response = fixture.run(request)
+
+      Then("it should not pass the validation, and yield AlreadyTrashed error")
+      response should containsFailedValidation("uuid", AlreadyTrashed)
     }
 
     Scenario("Validation passed") { fixture =>

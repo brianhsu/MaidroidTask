@@ -4,7 +4,7 @@ import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, Tag}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
-import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, FailedValidation, NotFound, Required, ValidationErrors}
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, Duplicated, FailedValidation, NotFound, Required, ValidationErrors}
 import moe.brianhsu.maidroidtask.usecase.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
@@ -93,6 +93,18 @@ class AddTagTest extends BaseFixtureFeature[AddTagFixture] {
 
       Then("it should NOT pass validation and yield Duplicate error")
       response should containsFailedValidation("name", Duplicated)
+    }
+
+    Scenario("Add a tag with parent tag which is delete") { fixture =>
+      Given("user request to add a tag with a delete parent tag")
+      val trashedTag = fixture.createTag(fixture.loggedInUser, "TrashedTag", isTrashed = true)
+      val request = AddTag.Request(fixture.loggedInUser, UUID.randomUUID, "Tag", Some(trashedTag.uuid))
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass validation and yield AlreadyTrashed error")
+      response should containsFailedValidation("parentTagUUID", AlreadyTrashed)
     }
 
     Scenario("There are same tag name in system for other user") { fixture =>

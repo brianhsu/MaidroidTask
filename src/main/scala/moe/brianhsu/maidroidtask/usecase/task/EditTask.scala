@@ -64,13 +64,15 @@ class EditTask(request: EditTask.Request)(implicit taskRepo: TaskRepo, tagRepo: 
     groupByField(
       createValidator("uuid", request.uuid,
         EntityValidator.exist[Task],
-        EntityValidator.belongToUser[Task](request.loggedInUser)
+        EntityValidator.belongToUser[Task](request.loggedInUser),
+        EntityValidator.notTrashed[Task]
       ),
       createValidator("description", request.description, option(GenericValidator.notEmpty)),
       createValidator("dependsOn", request.dependsOn, option(EntityValidator.allExist[Task])),
       createValidator("tags", request.tags,
         option(EntityValidator.allExist[Tag]),
-        option(EntityValidator.allBelongToUser[Tag](request.loggedInUser))
+        option(EntityValidator.allBelongToUser[Tag](request.loggedInUser)),
+        option(EntityValidator.allNotTrashed[Tag])
       )
     )
   }

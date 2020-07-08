@@ -49,7 +49,8 @@ class EditTag(request: EditTag.Request)(implicit tagRepo: TagRepo, generator: Dy
     groupByField(
       createValidator("uuid", request.uuid,
         EntityValidator.exist[Tag],
-        EntityValidator.belongToUser[Tag]((request.loggedInUser))
+        EntityValidator.belongToUser[Tag](request.loggedInUser),
+        EntityValidator.notTrashed[Tag]
       ),
       createValidator("name", request.name,
         option(GenericValidator.notEmpty),
@@ -57,7 +58,8 @@ class EditTag(request: EditTag.Request)(implicit tagRepo: TagRepo, generator: Dy
       ),
       createValidator("parentTagUUID", request.parentTagUUID,
         option(option(EntityValidator.exist[Tag])),
-        option(option(EntityValidator.belongToUser[Tag](request.loggedInUser)))
+        option(option(EntityValidator.belongToUser[Tag](request.loggedInUser))),
+        option(option(EntityValidator.notTrashed[Tag])),
       )
     )
   }

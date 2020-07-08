@@ -51,6 +51,7 @@ class AddTag(request: AddTag.Request)(implicit tagRepo: TagRepo, generator: Dyna
       createValidator(
         "parentTagUUID", request.parentTagUUID,
         option(EntityValidator.exist[Tag]),
+        option(EntityValidator.notTrashed[Tag]),
         option(EntityValidator.belongToUser[Tag](request.loggedInUser))
       )
     )

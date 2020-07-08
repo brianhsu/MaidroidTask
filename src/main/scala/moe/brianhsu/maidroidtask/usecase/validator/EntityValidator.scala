@@ -2,9 +2,9 @@ package moe.brianhsu.maidroidtask.usecase.validator
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{EntityWithUserId, NamedEntity, User}
+import moe.brianhsu.maidroidtask.entity.{EntityWithUserId, NamedEntity, TrashableEntity, User}
 import moe.brianhsu.maidroidtask.gateway.repo.{Readable, UserBasedReadable}
-import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, ErrorDescription, NotFound}
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, Duplicated, ErrorDescription, NotFound}
 
 object EntityValidator {
 
@@ -55,6 +55,20 @@ object EntityValidator {
     val entityOfUser = readable.listByUserUUID(loggedInUser.uuid)
     val hasDuplicate = entityOfUser.exists(e => e.name == name && !e.isTrashed)
     if (hasDuplicate) Some(Duplicated) else None
+  }
+
+  def allNotTrashed[T <: TrashableEntity](uuidList: List[UUID])(implicit readable: Readable[T]): Option[ErrorDescription] = {
+    uuidList.foreach { uuid =>
+      if (notTrashed(uuid).isDefined) {
+        return Some(AlreadyTrashed)
+      }
+    }
+    None
+  }
+
+  def notTrashed[T <: TrashableEntity](uuid: UUID)(implicit readable: Readable[T]): Option[ErrorDescription] = {
+    val isTrashed = readable.findByUUID(uuid).exists(_.isTrashed)
+    if (isTrashed) Some(AlreadyTrashed) else None
   }
 
 }

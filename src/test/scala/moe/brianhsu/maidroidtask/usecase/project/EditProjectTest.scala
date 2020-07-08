@@ -126,7 +126,7 @@ class EditProjectTest extends BaseFixtureFeature[EditProjectFixture] {
 
     Scenario("Edit a project that name is duplicated with trashed project") { fixture =>
       Given("user request to edit a project")
-      val trashedProject = fixture.createProject(fixture.loggedInUser, "SomeTrashedProject", true)
+      val trashedProject = fixture.createProject(fixture.loggedInUser, "SomeTrashedProject", isTrashed = true)
 
       And("new project name is duplicated with trashed project")
       val request = EditProject.Request(

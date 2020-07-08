@@ -38,11 +38,11 @@ class BaseFixture {
       )
     )
   }
-  def createProject(user: User, name: String, isTrashed: Boolean = false) = projectRepo.write.insert(
+  def createProject(user: User, name: String, parentProject: Option[UUID] = None, isTrashed: Boolean = false) = projectRepo.write.insert(
     Project(
       UUID.randomUUID, user.uuid, name,
       note = None,
-      parentProjectUUID = None,
+      parentProjectUUID = parentProject,
       isTrashed= isTrashed,
       status = Project.Active,
       createTime = LocalDateTime.now,

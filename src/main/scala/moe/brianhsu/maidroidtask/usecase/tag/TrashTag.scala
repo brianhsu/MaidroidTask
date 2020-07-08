@@ -54,15 +54,11 @@ class TrashTag(request: TrashTag.Request)(implicit tagRepo: TagRepo,
   override def validations: List[ValidationRules] = {
     implicit val read = tagRepo.read
 
-    def hasChildren(uuid: UUID): Option[ErrorDescription] = {
-      if (tagRepo.read.hasChildren(uuid)) Some(HasChildren) else None
-    }
-
     groupByField(
       createValidator("uuid", request.uuid,
         EntityValidator.exist[Tag],
         EntityValidator.belongToUser[Tag](request.loggedInUser),
-        hasChildren
+        EntityValidator.hasNoChild[Tag]
       )
     )
   }

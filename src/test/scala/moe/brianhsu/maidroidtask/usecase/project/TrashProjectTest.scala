@@ -1,8 +1,9 @@
 package moe.brianhsu.maidroidtask.usecase.project
 
+import java.time.{LocalDate, LocalDateTime}
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.Project
+import moe.brianhsu.maidroidtask.entity.{Change, GroupedJournal, HelloWorld, Project}
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, HasChildren, NotFound}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
@@ -82,69 +83,255 @@ class TrashProjectTest extends BaseFixtureFeature[TrashProjectFixture] {
   Feature("Trash a project in a cascade trash way") {
     Scenario("There are only 1 tasks") { fixture =>
       Given("a project with only 1 non-trashed task")
+      val userProject = fixture.createProject(fixture.loggedInUser, "MyProject")
+      val task = fixture.createTask(fixture.loggedInUser, "Task", projectUUID = Some(userProject.uuid))
+
       And("user request to trash that project")
+      val trashRequest = TrashProject.Request(fixture.loggedInUser, userProject.uuid)
+
       When("run the use case")
-      Then("the task should also be trashed")
+      val response = fixture.run(trashRequest)
+
+      Then("the task in storage should also be trashed")
+      val taskInStorage = fixture.taskRepo.read.findByUUID(task.uuid).value
+      taskInStorage.isTrashed shouldBe true
+
       And("maintain the project uuid in task entity")
-      And("the trashed task is updated in storage")
+      taskInStorage.project.value shouldBe userProject.uuid
+      taskInStorage.updateTime shouldBe fixture.generator.currentTime
+
       And("the project is updated in storage")
+      val projectInStorage = fixture.projectRepo.read.findByUUID(userProject.uuid).value
+      projectInStorage.isTrashed shouldBe true
+
       And("generate correct log")
-      pending
+      val journal = response.success.value.journals
+      inside(journal) { case GroupedJournal(journalUUID, userUUID, request, changes, timestamp) =>
+        journalUUID shouldBe fixture.generator.randomUUID
+        userUUID shouldBe fixture.loggedInUser.uuid
+        request shouldBe trashRequest
+        changes should contain theSameElementsAs List(
+          Change(fixture.generator.randomUUID, Some(userProject), projectInStorage, fixture.generator.currentTime),
+          Change(fixture.generator.randomUUID, Some(task), taskInStorage, fixture.generator.currentTime)
+        )
+        timestamp shouldBe fixture.generator.currentTime
+      }
     }
 
     Scenario("There are multiple task in that project") { fixture =>
       Given("a project with multiple tasks, including trashed one")
-      And("user request to trash that project")
-      When("run the use case")
-      Then("all tasks should also be trashed")
-      And("maintain the project uuid in tasks")
-      And("all tasks is updated in storage")
-      And("the project is updated in storage")
-      And("generate correct log")
-      pending
-    }
+      val userProject = fixture.createProject(fixture.loggedInUser, "MyProject")
+      val task1 = fixture.createTask(fixture.loggedInUser, "Task 1", projectUUID = Some(userProject.uuid))
+      val task2 = fixture.createTask(fixture.loggedInUser, "Task 2", projectUUID = Some(userProject.uuid), isTrashed = true)
+      val task3 = fixture.createTask(fixture.loggedInUser, "Task 3", projectUUID = Some(userProject.uuid))
 
+      And("user request to trash that project")
+      val trashRequest = TrashProject.Request(fixture.loggedInUser, userProject.uuid)
+
+      When("run the use case")
+      val response = fixture.run(trashRequest)
+
+      Then("all tasks in storage should also be trashed")
+      val taskInStorage = List(task1.uuid, task2.uuid, task3.uuid).flatMap(fixture.taskRepo.read.findByUUID)
+      forAll (taskInStorage) { task => task.isTrashed shouldBe true }
+
+      And("maintain the project uuid in tasks")
+      forAll (taskInStorage) { task => task.project shouldBe Some(userProject.uuid) }
+
+      And("the project is updated in storage")
+      val projectInStorage = fixture.projectRepo.read.findByUUID(userProject.uuid).value
+      projectInStorage.isTrashed shouldBe true
+
+      And("generate correct log")
+      val journal = response.success.value.journals
+      inside(journal) { case GroupedJournal(journalUUID, userUUID, request, changes, timestamp) =>
+        journalUUID shouldBe fixture.generator.randomUUID
+        userUUID shouldBe fixture.loggedInUser.uuid
+        request shouldBe trashRequest
+        changes should contain theSameElementsAs List(
+          Change(fixture.generator.randomUUID, Some(userProject), projectInStorage, fixture.generator.currentTime),
+          Change(fixture.generator.randomUUID, Some(task1), taskInStorage(0), fixture.generator.currentTime),
+          Change(fixture.generator.randomUUID, Some(task2), taskInStorage(1), fixture.generator.currentTime),
+          Change(fixture.generator.randomUUID, Some(task3), taskInStorage(2), fixture.generator.currentTime)
+        )
+        timestamp shouldBe fixture.generator.currentTime
+      }
+    }
   }
+
   Feature("Trash a project in oneLevelUp way") {
     Scenario("There are only 1 tasks, no-parent project") { fixture =>
       Given("a project with only 1 non-trashed task")
+      val userProject = fixture.createProject(fixture.loggedInUser, "MyProject")
+      val task = fixture.createTask(fixture.loggedInUser, "Task", projectUUID = Some(userProject.uuid))
+
       And("user request to trash that project")
+      val trashRequest = TrashProject.Request(fixture.loggedInUser, userProject.uuid, TrashProject.MoveOneLevelUp)
+
       When("run the use case")
-      Then("the project of that task should be None")
-      And("the task is updated in storage")
-      And("the project is updated in storage")
+      val response = fixture.run(trashRequest)
+
+      Then("the task in storage should update project to no parent project and not mark as trashed")
+      val taskInStorage = fixture.taskRepo.read.findByUUID(task.uuid).value
+      taskInStorage.project shouldBe None
+      taskInStorage.isTrashed shouldBe false
+      taskInStorage.updateTime shouldBe fixture.generator.currentTime
+
+      And("the project is marked as trashed")
+      val updatedProject = response.success.value.result
+      updatedProject.isTrashed shouldBe true
+      updatedProject.updateTime shouldBe fixture.generator.currentTime
+
+      And("updated in storage")
+      val projectInStorage = fixture.projectRepo.read.findByUUID(updatedProject.uuid).value
+      projectInStorage shouldBe updatedProject
+
       And("generate correct log")
-      pending
+      val journal = response.success.value.journals
+      inside(journal) { case GroupedJournal(journalUUID, userUUID, request, changes, timestamp) =>
+        journalUUID shouldBe fixture.generator.randomUUID
+        userUUID shouldBe fixture.loggedInUser.uuid
+        request shouldBe trashRequest
+        changes should contain theSameElementsAs List(
+          Change(fixture.generator.randomUUID, Some(userProject), projectInStorage, fixture.generator.currentTime),
+          Change(fixture.generator.randomUUID, Some(task), taskInStorage, fixture.generator.currentTime),
+        )
+        timestamp shouldBe fixture.generator.currentTime
+      }
     }
 
     Scenario("There are multiple task in that project, no-parent job") { fixture =>
-      Given("a project with multiple tasks, including trashed one")
+      Given("a project with parent project, and contains multiple tasks, including trashed one")
+      val userProject = fixture.createProject(fixture.loggedInUser, "MyProject")
+
+      val task1 = fixture.createTask(fixture.loggedInUser, "Task 1", projectUUID = Some(userProject.uuid))
+      val task2 = fixture.createTask(fixture.loggedInUser, "Task 2", projectUUID = Some(userProject.uuid))
+      val task3 = fixture.createTask(fixture.loggedInUser, "Task 3", projectUUID = Some(userProject.uuid))
+
       And("user request to trash that project")
-      Then("all tasks should have no assigned project")
-      And("all tasks is updated in storage")
-      And("the project is updated in storage")
+      val trashRequest = TrashProject.Request(fixture.loggedInUser, userProject.uuid, TrashProject.MoveOneLevelUp)
+
+      When("run the use case")
+      val response = fixture.run(trashRequest)
+
+      Then("all tasks in storage has been updated to no project")
+      val taskInStorage = List(task1.uuid, task2.uuid, task3.uuid).flatMap(fixture.taskRepo.read.findByUUID)
+      forAll (taskInStorage) { task =>
+        task.isTrashed shouldBe false
+        task.project shouldBe None
+      }
+
+      And("the project is marked as trashed")
+      val updatedProject = response.success.value.result
+      updatedProject.isTrashed shouldBe true
+      updatedProject.updateTime shouldBe fixture.generator.currentTime
+
+      And("updated in storage")
+      val projectInStorage = fixture.projectRepo.read.findByUUID(updatedProject.uuid).value
+      projectInStorage shouldBe updatedProject
+
       And("generate correct log")
-      pending
+      val journal = response.success.value.journals
+      inside(journal) { case GroupedJournal(journalUUID, userUUID, request, changes, timestamp) =>
+        journalUUID shouldBe fixture.generator.randomUUID
+        userUUID shouldBe fixture.loggedInUser.uuid
+        request shouldBe trashRequest
+        changes should contain theSameElementsAs List(
+          Change(fixture.generator.randomUUID, Some(userProject), projectInStorage, fixture.generator.currentTime),
+          Change(fixture.generator.randomUUID, Some(task1), taskInStorage(0), fixture.generator.currentTime),
+          Change(fixture.generator.randomUUID, Some(task2), taskInStorage(1), fixture.generator.currentTime),
+          Change(fixture.generator.randomUUID, Some(task3), taskInStorage(2), fixture.generator.currentTime),
+        )
+        timestamp shouldBe fixture.generator.currentTime
+      }
     }
+
     Scenario("There are only 1 tasks, with parent project") { fixture =>
       Given("a project with parent project, and contains only 1 tasks")
+      val parentProject = fixture.createProject(fixture.loggedInUser, "ParentProject")
+      val userProject = fixture.createProject(fixture.loggedInUser, "MyProject", parentProject = Some(parentProject.uuid))
+      val task = fixture.createTask(fixture.loggedInUser, "Task", projectUUID = Some(userProject.uuid))
+
       And("user request to trash that project")
+      val trashRequest = TrashProject.Request(fixture.loggedInUser, userProject.uuid, TrashProject.MoveOneLevelUp)
+
       When("run the use case")
-      Then("the project of that task should be parent-project")
-      And("the task is updated in storage")
-      And("the project is updated in storage")
+      val response = fixture.run(trashRequest)
+
+      Then("the task in storage should update project to parent project and not mark as trashed")
+      val taskInStorage = fixture.taskRepo.read.findByUUID(task.uuid).value
+      taskInStorage.project.value shouldBe parentProject.uuid
+      taskInStorage.isTrashed shouldBe false
+      taskInStorage.updateTime shouldBe fixture.generator.currentTime
+
+      And("the project is marked as trashed")
+      val updatedProject = response.success.value.result
+      updatedProject.isTrashed shouldBe true
+      updatedProject.updateTime shouldBe fixture.generator.currentTime
+
+      And("updated in storage")
+      val projectInStorage = fixture.projectRepo.read.findByUUID(updatedProject.uuid).value
+      projectInStorage shouldBe updatedProject
+
       And("generate correct log")
-      pending
+      val journal = response.success.value.journals
+      inside(journal) { case GroupedJournal(journalUUID, userUUID, request, changes, timestamp) =>
+        journalUUID shouldBe fixture.generator.randomUUID
+        userUUID shouldBe fixture.loggedInUser.uuid
+        request shouldBe trashRequest
+        changes should contain theSameElementsAs List(
+          Change(fixture.generator.randomUUID, Some(userProject), projectInStorage, fixture.generator.currentTime),
+          Change(fixture.generator.randomUUID, Some(task), taskInStorage, fixture.generator.currentTime),
+        )
+        timestamp shouldBe fixture.generator.currentTime
+      }
     }
 
     Scenario("There are multiple task in that project, with parent job") { fixture =>
-      Given("a project with parent project, and contains multiple tasks, including trashed one")
+      Given("a project with multiple tasks and parent project, including trashed one")
+      val parentProject = fixture.createProject(fixture.loggedInUser, "ParentProject")
+      val userProject = fixture.createProject(fixture.loggedInUser, "MyProject", parentProject = Some(parentProject.uuid))
+
+      val task1 = fixture.createTask(fixture.loggedInUser, "Task 1", projectUUID = Some(userProject.uuid))
+      val task2 = fixture.createTask(fixture.loggedInUser, "Task 2", projectUUID = Some(userProject.uuid))
+      val task3 = fixture.createTask(fixture.loggedInUser, "Task 3", projectUUID = Some(userProject.uuid))
+
       And("user request to trash that project")
-      Then("all tasks should have project uuid assigned to parent project")
-      And("all tasks is updated in storage")
-      And("the project is updated in storage")
+      val trashRequest = TrashProject.Request(fixture.loggedInUser, userProject.uuid, TrashProject.MoveOneLevelUp)
+
+      When("run the use case")
+      val response = fixture.run(trashRequest)
+
+      Then("all tasks in storage should have no assigned project and not trashed")
+      val taskInStorage = List(task1.uuid, task2.uuid, task3.uuid).flatMap(fixture.taskRepo.read.findByUUID)
+      forAll (taskInStorage) { task =>
+        task.isTrashed shouldBe false
+        task.project shouldBe userProject.parentProjectUUID
+      }
+
+      And("the project is is marked as trashed")
+      val updatedProject = response.success.value.result
+      updatedProject.isTrashed shouldBe true
+      updatedProject.updateTime shouldBe fixture.generator.currentTime
+
+      And("the change is stored in storage")
+      val projectInStorage = fixture.projectRepo.read.findByUUID(updatedProject.uuid).value
+      projectInStorage shouldBe updatedProject
+
       And("generate correct log")
-      pending
+      val journal = response.success.value.journals
+      inside(journal) { case GroupedJournal(journalUUID, userUUID, request, changes, timestamp) =>
+        journalUUID shouldBe fixture.generator.randomUUID
+        userUUID shouldBe fixture.loggedInUser.uuid
+        request shouldBe trashRequest
+        changes should contain theSameElementsAs List(
+          Change(fixture.generator.randomUUID, Some(userProject), projectInStorage, fixture.generator.currentTime),
+          Change(fixture.generator.randomUUID, Some(task1), taskInStorage(0), fixture.generator.currentTime),
+          Change(fixture.generator.randomUUID, Some(task2), taskInStorage(1), fixture.generator.currentTime),
+          Change(fixture.generator.randomUUID, Some(task3), taskInStorage(2), fixture.generator.currentTime),
+        )
+        timestamp shouldBe fixture.generator.currentTime
+      }
     }
 
   }

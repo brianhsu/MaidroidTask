@@ -26,28 +26,47 @@ class BaseFixture {
   val loggedInUser: User = User(UUID.randomUUID(), "user@example.com", "UserName")
   val otherUser: User = User(UUID.randomUUID(), "other@example.com", "OtherUser")
 
-  def createTag(user: User, name: String, isTrashed: Boolean = false) = tagRepo.write.insert(Tag(UUID.randomUUID, user.uuid, name, None, isTrashed, LocalDateTime.now, LocalDateTime.now))
-  def createTask(user: User, description: String, tags: List[UUID] = Nil, isTrashed: Boolean = false) = {
+  def createTag(user: User, name: String, isTrashed: Boolean = false) = {
+    tagRepo.write.insert(
+      Tag(
+        UUID.randomUUID, user.uuid,
+        name, None, isTrashed,
+        LocalDateTime.now, LocalDateTime.now
+      )
+    )
+  }
+
+  def createTask(user: User,
+                 description: String,
+                 tags: List[UUID] = Nil,
+                 projectUUID: Option[UUID] = None,
+                 isTrashed: Boolean = false) = {
     taskRepo.write.insert(
       Task(
         UUID.randomUUID, user.uuid, description,
         tags = tags,
+        project = projectUUID,
         isTrashed = isTrashed,
         createTime = LocalDateTime.now,
         updateTime = LocalDateTime.now
       )
     )
   }
-  def createProject(user: User, name: String, parentProject: Option[UUID] = None, isTrashed: Boolean = false) = projectRepo.write.insert(
-    Project(
-      UUID.randomUUID, user.uuid, name,
-      note = None,
-      parentProjectUUID = parentProject,
-      isTrashed= isTrashed,
-      status = Project.Active,
-      createTime = LocalDateTime.now,
-      updateTime = LocalDateTime.now
+
+  def createProject(user: User, name: String, parentProject: Option[UUID] = None,
+                    isTrashed: Boolean = false) = {
+    projectRepo.write.insert(
+      Project(
+        UUID.randomUUID, user.uuid, name,
+        note = None,
+        parentProjectUUID = parentProject,
+        isTrashed = isTrashed,
+        status = Project.Active,
+        createTime = LocalDateTime.now,
+        updateTime = LocalDateTime.now
+      )
     )
-  )
+  }
+
 
 }

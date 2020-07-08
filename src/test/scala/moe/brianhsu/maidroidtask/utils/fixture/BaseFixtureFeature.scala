@@ -1,11 +1,14 @@
 package moe.brianhsu.maidroidtask.utils.fixture
 
 import moe.brianhsu.maidroidtask.entity.Task
-import org.scalatest.{GivenWhenThen, Inside, OptionValues, Outcome, TryValues}
+import org.scalatest.{GivenWhenThen, Inside, Inspectors, OptionValues, Outcome, TryValues}
 import org.scalatest.featurespec.FixtureAnyFeatureSpec
 import org.scalatest.matchers.should.Matchers
 
-trait BaseFixtureFeature[T] extends FixtureAnyFeatureSpec with GivenWhenThen with TryValues with Matchers with OptionValues with Inside with ValidationMatchers {
+trait BaseFixtureFeature[T] extends FixtureAnyFeatureSpec with GivenWhenThen
+                            with TryValues with Matchers
+                            with OptionValues with Inside
+                            with ValidationMatchers with Inspectors {
   protected def createFixture: T
   override protected def withFixture(test: OneArgTest): Outcome = test(createFixture)
   override type FixtureParam = T

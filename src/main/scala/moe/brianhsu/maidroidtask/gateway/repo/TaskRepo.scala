@@ -12,6 +12,7 @@ trait TaskRepo {
 
   trait TaskReadable extends Readable[Task] {
     def findByTag(uuid: UUID): List[Task]
+    def findByProject(uuid: UUID): List[Task]
   }
 
   trait TaskWriteable extends Writable[Task] {

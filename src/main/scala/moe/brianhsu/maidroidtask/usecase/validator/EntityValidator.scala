@@ -71,8 +71,8 @@ object EntityValidator {
     if (isTrashed) Some(AlreadyTrashed) else None
   }
 
-  def hasNoChild[T <: Entity](uuid: UUID)(implicit readable: ParentChildReadable[T]): Option[ErrorDescription] = {
-    if (readable.hasChildren(uuid)) Some(HasChildren) else None
+  def hasNoUnTrashedChildren[T <: TrashableEntity](uuid: UUID)(implicit readable: ParentChildReadable[T]): Option[ErrorDescription] = {
+    if (readable.hasUnTrashedChildren(uuid)) Some(HasChildren) else None
   }
 
 }

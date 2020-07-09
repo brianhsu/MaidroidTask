@@ -5,7 +5,7 @@ import java.util.UUID
 import moe.brianhsu.maidroidtask.entity.{Change, GroupedJournal, Project, User}
 import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
 import moe.brianhsu.maidroidtask.gateway.repo.{ProjectRepo, TaskRepo}
-import moe.brianhsu.maidroidtask.usecase.{UseCase, UseCaseRequest}
+import moe.brianhsu.maidroidtask.usecase.{UseCase, UseCaseRequest, UseCaseRuntime}
 import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
 import moe.brianhsu.maidroidtask.usecase.project.TrashProject.{MoveOneLevelUp, TrashCascade}
 import moe.brianhsu.maidroidtask.usecase.validator.EntityValidator
@@ -21,71 +21,71 @@ object TrashProject {
 }
 
 class TrashProject(request: TrashProject.Request)
-                  (implicit projectRepo: ProjectRepo,
-                   taskRepo: TaskRepo,
-                   generator: DynamicDataGenerator) extends UseCase[Project] {
+                  (implicit runtime: UseCaseRuntime) extends UseCase[Project] {
 
   private var cascadeChanges: List[Change] = Nil
-  private lazy val oldProject = projectRepo.read.findByUUID(request.uuid)
+  private lazy val oldProject = runtime.projectRepo.read.findByUUID(request.uuid)
   private lazy val updatedProject = oldProject.map { project =>
     project.copy(
       isTrashed = true,
-      updateTime = generator.currentTime
+      updateTime = runtime.generator.currentTime
     )
   }
 
   override def doAction(): Project = {
 
-    println("====> Mode:" + request.cascadeMode)
     this.cascadeChanges = request.cascadeMode match {
       case TrashCascade => cascadeTrashTask()
       case MoveOneLevelUp => moveOneLevelUp()
     }
 
-    updatedProject.foreach { project => projectRepo.write.update(project.uuid, project) }
+    updatedProject.foreach { project => runtime.projectRepo.write.update(project.uuid, project) }
     updatedProject.get
   }
 
   private def moveOneLevelUp(): List[Change] = {
-    println("====> moveOneLevelUp")
 
-    taskRepo.read.findByProject(request.uuid).map { task =>
-      println("====> moveOneLevelUp.parentProjectUUID:" + oldProject.get.parentProjectUUID)
-
-      val updatedTask = task.copy(project = oldProject.get.parentProjectUUID, updateTime = generator.currentTime)
-      taskRepo.write.update(updatedTask.uuid, updatedTask)
-      Change(generator.randomUUID, Some(task), updatedTask, generator.currentTime)
+    runtime.taskRepo.read.findByProject(request.uuid).map { task =>
+      val updatedTask = task.copy(
+        project = oldProject.get.parentProjectUUID,
+        updateTime = runtime.generator.currentTime
+      )
+      runtime.taskRepo.write.update(updatedTask.uuid, updatedTask)
+      Change(runtime.generator.randomUUID, Some(task), updatedTask, runtime.generator.currentTime)
     }
   }
 
   private def cascadeTrashTask(): List[Change] = {
-    taskRepo.read.findByProject(request.uuid).map { task =>
-      val trashedTask = task.copy(isTrashed = true, updateTime = generator.currentTime)
-      taskRepo.write.update(trashedTask.uuid, trashedTask)
-      Change(generator.randomUUID, Some(task), trashedTask, generator.currentTime)
+    runtime.taskRepo.read.findByProject(request.uuid).map { task =>
+      val trashedTask = task.copy(isTrashed = true, updateTime = runtime.generator.currentTime)
+      runtime.taskRepo.write.update(trashedTask.uuid, trashedTask)
+      Change(runtime.generator.randomUUID, Some(task), trashedTask, runtime.generator.currentTime)
     }
   }
 
   override def validations: List[ValidationRules] = {
 
-    implicit val projectReadable = projectRepo.read
+    implicit val projectRead = runtime.projectRepo.read
 
     groupByField(
       createValidator("uuid", request.uuid,
         EntityValidator.exist[Project],
         EntityValidator.notTrashed[Project],
-        EntityValidator.hasNoChild[Project],
+        EntityValidator.hasNoUnTrashedChildren[Project],
         EntityValidator.belongToUser[Project](request.loggedInUser)
       ),
     )
   }
 
-  private val projectChange = updatedProject.map(p => Change(generator.randomUUID, oldProject, p, generator.currentTime)).toList
+  private val projectChange = updatedProject.map { p =>
+    Change(runtime.generator.randomUUID, oldProject, p, runtime.generator.currentTime)
+  }.toList
+
   override def groupedJournal: GroupedJournal = GroupedJournal(
-    generator.randomUUID,
+    runtime.generator.randomUUID,
     request.loggedInUser.uuid,
     request,
     projectChange ++ cascadeChanges,
-    generator.currentTime
+    runtime.generator.currentTime
   )
 }

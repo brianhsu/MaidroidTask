@@ -10,8 +10,8 @@ class InMemoryTaskRepo(data: InMemoryData) extends TaskRepo {
 
   import data._
 
-  override def read: TaskReadable = new InMemoryTaskRepoRead
-  override def write: TaskWriteable = new InMemoryTaskRepoWrite
+  override val read: TaskReadable = new InMemoryTaskRepoRead
+  override val write: TaskWriteable = new InMemoryTaskRepoWrite
 
   class InMemoryTaskRepoRead extends TaskReadable {
     override def findByUUID(uuid: UUID): Option[Task] = uuidToTask.get(uuid)

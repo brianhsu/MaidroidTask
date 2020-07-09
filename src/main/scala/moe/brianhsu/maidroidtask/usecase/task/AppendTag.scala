@@ -2,10 +2,10 @@ package moe.brianhsu.maidroidtask.usecase.task
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{GroupedJournal, Change, Tag, Task, User}
+import moe.brianhsu.maidroidtask.entity.{Change, GroupedJournal, Tag, Task, User}
 import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
 import moe.brianhsu.maidroidtask.gateway.repo.{TagRepo, TaskRepo}
-import moe.brianhsu.maidroidtask.usecase.{UseCase, UseCaseRequest}
+import moe.brianhsu.maidroidtask.usecase.{UseCase, UseCaseRequest, UseCaseRuntime}
 import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
 import moe.brianhsu.maidroidtask.usecase.validator.EntityValidator
 
@@ -14,28 +14,36 @@ object AppendTag {
 }
 
 class AppendTag(request: AppendTag.Request)
-               (implicit taskRepo: TaskRepo, tagRepo: TagRepo,
-                generator: DynamicDataGenerator) extends UseCase[Task] {
+               (implicit runtime: UseCaseRuntime) extends UseCase[Task] {
 
-  private lazy val oldTask = taskRepo.read.findByUUID(request.uuid)
+  private lazy val oldTask = runtime.taskRepo.read.findByUUID(request.uuid)
   private lazy val updatedTask = oldTask.map { task =>
-    taskRepo.write.appendTag(task.uuid, request.tagUUID, generator.currentTime)
+    runtime.taskRepo.write.appendTag(
+      task.uuid, request.tagUUID,
+      runtime.generator.currentTime
+    )
   }
 
   override def doAction(): Task = updatedTask.get
 
   override def groupedJournal: GroupedJournal = GroupedJournal(
-    generator.randomUUID, request.loggedInUser.uuid,
-    request, journals, generator.currentTime
+    runtime.generator.randomUUID,
+    request.loggedInUser.uuid,
+    request, journals,
+    runtime.generator.currentTime
   )
 
   private def journals: List[Change] = List(
-    Change(generator.randomUUID, oldTask, updatedTask.get, generator.currentTime)
+    Change(
+      runtime.generator.randomUUID, oldTask,
+      updatedTask.get,
+      runtime.generator.currentTime
+    )
   )
 
   override def validations: List[ValidationRules] = {
-    implicit val taskRead= taskRepo.read
-    implicit val tagRead = tagRepo.read
+    implicit val taskRead= runtime.taskRepo.read
+    implicit val tagRead = runtime.tagRepo.read
 
     groupByField(
       createValidator("uuid", request.uuid,

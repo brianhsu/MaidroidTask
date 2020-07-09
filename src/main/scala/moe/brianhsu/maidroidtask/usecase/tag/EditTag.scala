@@ -2,10 +2,10 @@ package moe.brianhsu.maidroidtask.usecase.tag
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{GroupedJournal, Change, Tag, User}
+import moe.brianhsu.maidroidtask.entity.{Change, GroupedJournal, Tag, User}
 import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
 import moe.brianhsu.maidroidtask.gateway.repo.TagRepo
-import moe.brianhsu.maidroidtask.usecase.{UseCase, UseCaseRequest}
+import moe.brianhsu.maidroidtask.usecase.{UseCase, UseCaseRequest, UseCaseRuntime}
 import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
 import moe.brianhsu.maidroidtask.usecase.validator.{EntityValidator, GenericValidator}
 
@@ -16,35 +16,34 @@ object EditTag {
                      parentTagUUID: Option[Option[UUID]] = None) extends UseCaseRequest
 }
 
-class EditTag(request: EditTag.Request)(implicit tagRepo: TagRepo, generator: DynamicDataGenerator) extends UseCase[Tag] {
-  private lazy val oldTag = tagRepo.read.findByUUID(request.uuid)
+class EditTag(request: EditTag.Request)(implicit runtime: UseCaseRuntime) extends UseCase[Tag] {
+  private lazy val oldTag = runtime.tagRepo.read.findByUUID(request.uuid)
   private lazy val updatedTag = oldTag.map { tag =>
     tag.copy(
       name = request.name.getOrElse(tag.name),
       parentTagUUID = request.parentTagUUID.getOrElse(tag.parentTagUUID),
-      updateTime = generator.currentTime
+      updateTime = runtime.generator.currentTime
     )
   }
 
   override def doAction(): Tag = {
-    updatedTag.foreach(tag => tagRepo.write.update(request.uuid, tag))
+    updatedTag.foreach(tag => runtime.tagRepo.write.update(request.uuid, tag))
     updatedTag.get
   }
 
   override def groupedJournal: GroupedJournal = GroupedJournal(
-    generator.randomUUID, request.loggedInUser.uuid,
-    request, journals, generator.currentTime
+    runtime.generator.randomUUID, request.loggedInUser.uuid,
+    request, journals, runtime.generator.currentTime
   )
 
   private def journals: List[Change] = updatedTag.map(tag =>
-    Change(generator.randomUUID, oldTag, tag, generator.currentTime)
+    Change(runtime.generator.randomUUID, oldTag, tag, runtime.generator.currentTime)
   ).toList
   
   override def validations: List[ValidationRules] = {
 
-    implicit val read = tagRepo.read
-
     import GenericValidator.option
+    implicit val tagRead = runtime.tagRepo.read
 
     groupByField(
       createValidator("uuid", request.uuid,

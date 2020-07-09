@@ -9,13 +9,16 @@ class InMemoryProjectRepo(data: InMemoryData) extends ProjectRepo {
 
   import data._
 
-  override def read: ProjectReadable = new InMemoryProjectReadable
-  override def write: ProjectWritable = new InMemoryProjectWrite
+  override val read: ProjectReadable = new InMemoryProjectReadable
+  override val write: ProjectWritable = new InMemoryProjectWrite
 
   class InMemoryProjectReadable extends ProjectReadable {
     override def findByUUID(uuid: UUID): Option[Project] = uuidToProject.get(uuid)
-    override def hasChildren(uuid: UUID): Boolean = data.uuidToProject.values.exists(project => project.parentProjectUUID.contains(uuid))
     override def listByUserUUID(userUUID: UUID): List[Project] = data.uuidToProject.values.filter(_.userUUID == userUUID).toList
+    override def hasUnTrashedChildren(uuid: UUID): Boolean = data.uuidToProject.values.exists { project =>
+      project.parentProjectUUID.contains(uuid) && !project.isTrashed
+    }
+
   }
 
   class InMemoryProjectWrite extends ProjectWritable {

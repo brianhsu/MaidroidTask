@@ -7,8 +7,8 @@ import moe.brianhsu.maidroidtask.entity.Task
 
 trait TaskRepo {
 
-  def read: TaskReadable
-  def write: TaskWriteable
+  val read: TaskReadable
+  val write: TaskWriteable
 
   trait TaskReadable extends Readable[Task] {
     def findByTag(uuid: UUID): List[Task]

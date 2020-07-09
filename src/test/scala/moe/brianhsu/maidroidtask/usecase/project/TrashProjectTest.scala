@@ -118,6 +118,44 @@ class TrashProjectTest extends BaseFixtureFeature[TrashProjectFixture] {
       }
     }
 
+    Scenario("Trash a project that has trashed children projects") { fixture =>
+      Given("a parent project with trashed children projects")
+      val parentProject = fixture.createProject(fixture.loggedInUser, "ParentProject")
+      val trashedChild1 = fixture.createProject(fixture.loggedInUser, "Trashed 1", Some(parentProject.uuid), isTrashed = true)
+      val trashedChild2 = fixture.createProject(fixture.loggedInUser, "Trashed 1", Some(parentProject.uuid), isTrashed = true)
+
+      And("user request to trash the parent project")
+      val trashRequest = TrashProject.Request(fixture.loggedInUser, parentProject.uuid)
+
+      When("run the use case")
+      val response = fixture.run(trashRequest)
+
+      Then("the parent project should be deleted")
+      val trashedParentProject = response.success.value.result
+      trashedParentProject.isTrashed shouldBe true
+      trashedParentProject.updateTime shouldBe fixture.generator.currentTime
+
+      And("stored in storage")
+      val projectInStorage = fixture.projectRepo.read.findByUUID(trashRequest.uuid).value
+      projectInStorage shouldBe trashedParentProject
+
+      And("generate correct journal entry")
+      inside(response.success.value.journals) { case GroupedJournal(journalUUID, userUUID, request, changes, timestamp) =>
+        journalUUID shouldBe fixture.generator.randomUUID
+        userUUID shouldBe fixture.loggedInUser.uuid
+        request shouldBe trashRequest
+        timestamp shouldBe fixture.generator.currentTime
+        changes should contain theSameElementsAs List(
+          Change(
+            fixture.generator.randomUUID,
+            Some(parentProject),
+            trashedParentProject,
+            fixture.generator.currentTime
+          )
+        )
+      }
+    }
+
     Scenario("There are multiple task in that project") { fixture =>
       Given("a project with multiple tasks, including trashed one")
       val userProject = fixture.createProject(fixture.loggedInUser, "MyProject")

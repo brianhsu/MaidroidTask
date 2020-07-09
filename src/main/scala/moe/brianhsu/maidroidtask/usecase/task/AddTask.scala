@@ -4,9 +4,8 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, GroupedJournal, Project, ScheduledAt, Tag, Task, User}
-import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
-import moe.brianhsu.maidroidtask.gateway.repo.{ProjectRepo, Readable, TagRepo, TaskRepo}
-import moe.brianhsu.maidroidtask.usecase.{UseCase, UseCaseRequest}
+import moe.brianhsu.maidroidtask.gateway.repo.Readable
+import moe.brianhsu.maidroidtask.usecase.{UseCase, UseCaseRequest, UseCaseRuntime}
 import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
 import moe.brianhsu.maidroidtask.usecase.task.AddTask.Request
 import moe.brianhsu.maidroidtask.usecase.validator.{EntityValidator, GenericValidator}
@@ -25,37 +24,37 @@ object AddTask {
                      isDone: Boolean = false) extends UseCaseRequest
 }
 
-class AddTask(request: Request)(implicit val taskRepo: TaskRepo,
-                                tagRepo: TagRepo,
-                                projectRepo: ProjectRepo,
-                                generator: DynamicDataGenerator) extends UseCase[Task] {
+class AddTask(request: Request)(implicit runtime: UseCaseRuntime) extends UseCase[Task] {
   private val task = Task(
     request.uuid, request.loggedInUser.uuid,
     request.description, request.note, request.project, request.tags,
     request.dependsOn, request.waitUntil, request.due,
     request.scheduledAt, isDone = request.isDone, isTrashed = false,
-    generator.currentTime, generator.currentTime
+    runtime.generator.currentTime, runtime.generator.currentTime
   )
 
   override def doAction(): Task = {
-    taskRepo.write.insert(task)
+    runtime.taskRepo.write.insert(task)
     task
   }
 
   override def groupedJournal: GroupedJournal = GroupedJournal(
-    generator.randomUUID, request.loggedInUser.uuid,
-    request, journals, generator.currentTime
+    runtime.generator.randomUUID, request.loggedInUser.uuid,
+    request, journals, runtime.generator.currentTime
   )
 
   private def journals: List[Change] = List(
-    Change(generator.randomUUID, None, task, generator.currentTime)
+    Change(
+      runtime.generator.randomUUID, None, task,
+      runtime.generator.currentTime
+    )
   )
 
   override def validations: List[ValidationRules] = {
 
-    implicit val readable: Readable[Task] = taskRepo.read
-    implicit val tagReadable: Readable[Tag] = tagRepo.read
-    implicit val projectReadable: Readable[Project] = projectRepo.read
+    implicit val readable: Readable[Task] = runtime.taskRepo.read
+    implicit val tagReadable: Readable[Tag] = runtime.tagRepo.read
+    implicit val projectReadable: Readable[Project] = runtime.projectRepo.read
     import GenericValidator.option
 
     groupByField(

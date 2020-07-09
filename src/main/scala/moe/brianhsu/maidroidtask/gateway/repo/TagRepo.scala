@@ -6,8 +6,8 @@ import moe.brianhsu.maidroidtask.entity.Tag
 
 trait TagRepo {
 
-  def read: TagReadable
-  def write: TagWritable
+  val read: TagReadable
+  val write: TagWritable
 
   trait TagReadable extends Readable[Tag] with ParentChildReadable[Tag] with UserBasedReadable[Tag]
   trait TagWritable extends Writable[Tag]

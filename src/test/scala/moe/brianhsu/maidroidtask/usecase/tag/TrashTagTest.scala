@@ -3,7 +3,7 @@ package moe.brianhsu.maidroidtask.usecase.tag
 import java.time.LocalDateTime
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Change, Tag}
+import moe.brianhsu.maidroidtask.entity.{Change, GroupedJournal, Tag}
 import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, HasChildren, NotFound}
 import moe.brianhsu.maidroidtask.usecase.types.ResultHolder
@@ -78,7 +78,7 @@ class TrashTagTest extends BaseFixtureFeature[TrashTagFixture] {
   }
 
   Feature("Trash the tag in storage") {
-    Scenario("Trash the tag successfully") { fixture =>
+    Scenario("Trash the without deleted child tag") { fixture =>
       Given("user request to trash a tag belongs to him/her")
       val request = TrashTag.Request(fixture.loggedInUser, fixture.childTag.uuid)
 
@@ -105,6 +105,42 @@ class TrashTagTest extends BaseFixtureFeature[TrashTagFixture] {
       response.success.value.journals.changes shouldBe List(
         Change(fixture.generator.randomUUID, Some(fixture.childTag), tagInStorage, fixture.generator.currentTime)
       )
+    }
+
+    Scenario("Trash a tag with trashed child tag") { fixture =>
+      Given("A parent tag with trashed children tags")
+      val parentTag = fixture.createTag(fixture.loggedInUser, "Parent Tag")
+      val trashedTag1 = fixture.createTag(fixture.loggedInUser, "Trashed Tag 1", Some(parentTag.uuid), isTrashed = true)
+      val trashedTag2 = fixture.createProject(fixture.loggedInUser, "Trashed Tag 2", Some(parentTag.uuid), isTrashed = true)
+
+      And("user request to trash parent ")
+      val request = TrashTag.Request(fixture.loggedInUser, parentTag.uuid)
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("the parent tag should be trashed")
+      val trashedParentTag = response.success.value.result
+      trashedParentTag.isTrashed shouldBe true
+
+      And("stored in storage")
+      val parentTagInStorage = fixture.tagRepo.read.findByUUID(parentTag.uuid).value
+      parentTagInStorage shouldBe trashedParentTag
+
+      And("generate correct journal log")
+      inside(response.success.value.journals) { case GroupedJournal(journalUUID, userUUID, journalRequest, changes, timestamp) =>
+        journalUUID shouldBe fixture.generator.randomUUID
+        userUUID shouldBe fixture.loggedInUser.uuid
+        journalRequest shouldBe request
+        changes should contain theSameElementsAs List(
+          Change(
+            fixture.generator.randomUUID,
+            Some(parentTag),
+            parentTagInStorage,
+            fixture.generator.currentTime
+          )
+        )
+      }
     }
   }
 

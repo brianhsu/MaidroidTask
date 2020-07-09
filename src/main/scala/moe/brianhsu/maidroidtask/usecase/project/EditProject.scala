@@ -2,12 +2,11 @@ package moe.brianhsu.maidroidtask.usecase.project
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{GroupedJournal, Change, Project, User}
-import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
-import moe.brianhsu.maidroidtask.gateway.repo.ProjectRepo
-import moe.brianhsu.maidroidtask.usecase.{UseCase, UseCaseRequest}
+import moe.brianhsu.maidroidtask.entity.{Change, GroupedJournal, Project, User}
+import moe.brianhsu.maidroidtask.usecase.{UseCase, UseCaseRequest, UseCaseRuntime}
 import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
 import moe.brianhsu.maidroidtask.usecase.validator.EntityValidator
+import moe.brianhsu.maidroidtask.usecase.validator.GenericValidator
 
 object EditProject {
   case class Request(loggedInUser: User, uuid: UUID,
@@ -17,9 +16,9 @@ object EditProject {
                      status: Option[Project.Status] = None) extends UseCaseRequest
 }
 
-class EditProject(request: EditProject.Request)(implicit projectRepo: ProjectRepo, generator: DynamicDataGenerator) extends UseCase[Project] {
+class EditProject(request: EditProject.Request)(implicit runtime: UseCaseRuntime) extends UseCase[Project] {
 
-  private lazy val oldProject = projectRepo.read.findByUUID(request.uuid)
+  private lazy val oldProject = runtime.projectRepo.read.findByUUID(request.uuid)
   private lazy val updatedProject = oldProject.map { project =>
     project.copy(
       name = request.name.getOrElse(project.name),
@@ -29,24 +28,23 @@ class EditProject(request: EditProject.Request)(implicit projectRepo: ProjectRep
     )
   }
   override def doAction(): Project = {
-    updatedProject.foreach(project => projectRepo.write.update(project.uuid, project))
+    updatedProject.foreach(project => runtime.projectRepo.write.update(project.uuid, project))
     updatedProject.get
   }
 
   override def groupedJournal: GroupedJournal = GroupedJournal(
-    generator.randomUUID, request.loggedInUser.uuid,
-    request, journals, generator.currentTime
+    runtime.generator.randomUUID, request.loggedInUser.uuid,
+    request, journals, runtime.generator.currentTime
   )
 
   private def journals: List[Change] = updatedProject.map { project =>
-    Change(generator.randomUUID, oldProject, project, generator.currentTime)
+    Change(runtime.generator.randomUUID, oldProject, project, runtime.generator.currentTime)
   }.toList
 
   override def validations: List[ValidationRules] = {
 
-    implicit val projectReadable = projectRepo.read
-
-    import moe.brianhsu.maidroidtask.usecase.validator.GenericValidator._
+    import GenericValidator._
+    implicit val projectRepo = runtime.projectRepo.read
 
     groupByField(
       createValidator("uuid", request.uuid,

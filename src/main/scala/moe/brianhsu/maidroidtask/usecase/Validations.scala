@@ -15,6 +15,8 @@ object Validations {
   case object NotFound extends ErrorDescription
   case object HasChildren extends ErrorDescription
   case object AlreadyTrashed extends ErrorDescription
+  case object NotTrashed extends ErrorDescription
+  case object ParentIsTrashed extends ErrorDescription
 
 }
 

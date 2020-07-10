@@ -4,7 +4,7 @@ import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Entity, EntityWithUserId, NamedEntity, TrashableEntity, User}
 import moe.brianhsu.maidroidtask.gateway.repo.{ParentChildReadable, Readable, UserBasedReadable}
-import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, Duplicated, ErrorDescription, HasChildren, NotFound}
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, Duplicated, ErrorDescription, HasChildren, NotFound, NotTrashed}
 
 object EntityValidator {
 
@@ -69,6 +69,11 @@ object EntityValidator {
   def notTrashed[T <: TrashableEntity](uuid: UUID)(implicit readable: Readable[T]): Option[ErrorDescription] = {
     val isTrashed = readable.findByUUID(uuid).exists(_.isTrashed)
     if (isTrashed) Some(AlreadyTrashed) else None
+  }
+
+  def isTrashed[T <: TrashableEntity](uuid: UUID)(implicit readable: Readable[T]): Option[ErrorDescription] = {
+    val isTrashed = readable.findByUUID(uuid).exists(_.isTrashed)
+    if (!isTrashed) Some(NotTrashed) else None
   }
 
   def hasNoUnTrashedChildren[T <: TrashableEntity](uuid: UUID)(implicit readable: ParentChildReadable[T]): Option[ErrorDescription] = {

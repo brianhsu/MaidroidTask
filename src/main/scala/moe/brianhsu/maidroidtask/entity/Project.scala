@@ -3,7 +3,7 @@ package moe.brianhsu.maidroidtask.entity
 import java.time.LocalDateTime
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.gateway.repo.ProjectRepo
+import moe.brianhsu.maidroidtask.gateway.repo.Readable
 
 import scala.annotation.tailrec
 
@@ -23,23 +23,23 @@ case class Project(uuid: UUID, userUUID: UUID,
                    createTime: LocalDateTime,
                    updateTime: LocalDateTime) extends EntityWithUserId with NamedEntity with TrashableEntity {
 
-  def hasLoopsWith(uuid: UUID)(implicit projectRepo: ProjectRepo): Boolean = {
+  def hasLoopsWith(uuid: UUID)(implicit projectRead: Readable[Project]): Boolean = {
 
     @tailrec
     def hasLoopsInParent(parentProjectHolder: Option[Project]): Boolean = {
       parentProjectHolder match {
         case None => false
         case Some(p) if p.parentProjectUUID.contains(uuid) => true
-        case Some(p) => hasLoopsInParent(p.parentProjectUUID.flatMap(projectRepo.read.findByUUID))
+        case Some(p) => hasLoopsInParent(p.parentProjectUUID.flatMap(projectRead.findByUUID))
       }
     }
 
-    val projectHolder = projectRepo.read.findByUUID(uuid)
+    val projectHolder = projectRead.findByUUID(uuid)
     projectHolder match {
       case None => false
       case Some(project) =>
         project.parentProjectUUID.contains(this.uuid) ||
-          hasLoopsInParent(parentProjectUUID.flatMap(projectRepo.read.findByUUID))
+          hasLoopsInParent(parentProjectUUID.flatMap(projectRead.findByUUID))
     }
   }
 

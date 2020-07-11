@@ -17,6 +17,7 @@ object Validations {
   case object AlreadyTrashed extends ErrorDescription
   case object NotTrashed extends ErrorDescription
   case object ParentIsTrashed extends ErrorDescription
+  case object DependencyLoop extends ErrorDescription
 
 }
 

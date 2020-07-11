@@ -4,12 +4,12 @@ import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 class ProjectFixture extends BaseFixture
 
-class ProjectFeature extends BaseFixtureFeature[ProjectFixture] {
+class ProjectTest extends BaseFixtureFeature[ProjectFixture] {
   override protected def createFixture: ProjectFixture = new ProjectFixture
 
   Feature("Circular dependency detection") {
     Scenario("The current project has no parent project") { fixture =>
-      implicit val projectRepo = fixture.projectRepo
+      implicit val projectRepo = fixture.projectRepo.read
 
       Given("a project dependency looks like the following")
       info("    projectA <-- projectB <-- projectC <-- projectD")
@@ -29,7 +29,7 @@ class ProjectFeature extends BaseFixtureFeature[ProjectFixture] {
     }
 
     Scenario("Project depends on each other") { fixture =>
-      implicit val projectRepo = fixture.projectRepo
+      implicit val projectRepo = fixture.projectRepo.read
 
       Given("projectB has a parent project named projectA")
       val projectA = fixture.createProject(fixture.loggedInUser, "ProjectA")
@@ -43,7 +43,7 @@ class ProjectFeature extends BaseFixtureFeature[ProjectFixture] {
     }
 
     Scenario("Root parent project add to project outside of dependency") { fixture =>
-      implicit val projectRepo = fixture.projectRepo
+      implicit val projectRepo = fixture.projectRepo.read
 
       Given("A project dependency looks like the following")
       info("    projectA <-- projectB <-- projectC <-- projectD")
@@ -66,7 +66,7 @@ class ProjectFeature extends BaseFixtureFeature[ProjectFixture] {
     }
 
     Scenario("Creating loop for project dependency") { fixture =>
-      implicit val projectRepo = fixture.projectRepo
+      implicit val projectRepo = fixture.projectRepo.read
 
       Given("A project dependency looks like the following")
       info("    projectA <-- projectB <-- projectC <-- projectD")

@@ -3,7 +3,7 @@ package moe.brianhsu.maidroidtask.usecase.tag
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, Journal, Tag, User}
-import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
+import moe.brianhsu.maidroidtask.usecase.Validations.{DependencyLoop, ValidationRules}
 import moe.brianhsu.maidroidtask.usecase.base.{UseCase, UseCaseRequest, UseCaseRuntime}
 import moe.brianhsu.maidroidtask.usecase.validator.{EntityValidator, GenericValidator}
 
@@ -43,6 +43,11 @@ class EditTag(request: EditTag.Request)(implicit runtime: UseCaseRuntime) extend
     import GenericValidator.option
     implicit val tagRead = runtime.tagRepo.read
 
+    def notCreateDependencyLoop(uuid: UUID) = {
+      val hasLoop = oldTag.exists(_.hasLoopsWith(uuid))
+      if (hasLoop) Some(DependencyLoop) else None
+    }
+
     groupByField(
       createValidator("uuid", request.uuid,
         EntityValidator.exist[Tag],
@@ -57,6 +62,7 @@ class EditTag(request: EditTag.Request)(implicit runtime: UseCaseRuntime) extend
         option(option(EntityValidator.exist[Tag])),
         option(option(EntityValidator.belongToUser[Tag](request.loggedInUser))),
         option(option(EntityValidator.notTrashed[Tag])),
+        option(option(notCreateDependencyLoop))
       )
     )
   }

@@ -3,7 +3,7 @@ package moe.brianhsu.maidroidtask.gateway.repo.memory
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.Tag
-import moe.brianhsu.maidroidtask.gateway.repo.TagRepo
+import moe.brianhsu.maidroidtask.gateway.repo.{TagReadable, TagRepo, TagWritable}
 
 class InMemoryTagRepo(data: InMemoryData) extends TagRepo {
 

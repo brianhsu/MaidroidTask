@@ -3,7 +3,7 @@ package moe.brianhsu.maidroidtask.usecase.project
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, Journal, Project, User}
-import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
+import moe.brianhsu.maidroidtask.usecase.Validations.{DependencyLoop, ValidationRules}
 import moe.brianhsu.maidroidtask.usecase.base.{UseCase, UseCaseRequest, UseCaseRuntime}
 import moe.brianhsu.maidroidtask.usecase.validator.EntityValidator
 import moe.brianhsu.maidroidtask.usecase.validator.GenericValidator
@@ -46,6 +46,11 @@ class EditProject(request: EditProject.Request)(implicit runtime: UseCaseRuntime
     import GenericValidator._
     implicit val projectRepo = runtime.projectRepo.read
 
+    def notCreateDependencyLoop(uuid: UUID) = {
+      val hasLoop = oldProject.exists(_.hasLoopsWith(uuid))
+      if (hasLoop) Some(DependencyLoop) else None
+    }
+
     groupByField(
       createValidator("uuid", request.uuid,
         EntityValidator.exist[Project],
@@ -58,7 +63,8 @@ class EditProject(request: EditProject.Request)(implicit runtime: UseCaseRuntime
       createValidator("parentProjectUUID", request.parentProjectUUID,
         option(option(EntityValidator.exist[Project])),
         option(option(EntityValidator.belongToUser[Project](request.loggedInUser))),
-        option(option(EntityValidator.notTrashed[Project]))
+        option(option(EntityValidator.notTrashed[Project])),
+        option(option(notCreateDependencyLoop))
       )
     )
   }

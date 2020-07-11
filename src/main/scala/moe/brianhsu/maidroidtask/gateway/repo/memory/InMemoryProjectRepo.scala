@@ -3,7 +3,7 @@ package moe.brianhsu.maidroidtask.gateway.repo.memory
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.Project
-import moe.brianhsu.maidroidtask.gateway.repo.ProjectRepo
+import moe.brianhsu.maidroidtask.gateway.repo.{ProjectReadable, ProjectRepo, ProjectWritable}
 
 class InMemoryProjectRepo(data: InMemoryData) extends ProjectRepo {
 

@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.Task
-import moe.brianhsu.maidroidtask.gateway.repo.TaskRepo
+import moe.brianhsu.maidroidtask.gateway.repo.{TaskReadable, TaskRepo, TaskWriteable}
 
 class InMemoryTaskRepo(data: InMemoryData) extends TaskRepo {
 

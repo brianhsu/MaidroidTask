@@ -2,7 +2,7 @@ package moe.brianhsu.maidroidtask.usecase.validator
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Entity, EntityWithUserId, NamedEntity, TrashableEntity, User}
+import moe.brianhsu.maidroidtask.entity.{EntityWithUserId, NamedEntity, TrashableEntity, User}
 import moe.brianhsu.maidroidtask.gateway.repo.{ParentChildReadable, Readable, UserBasedReadable}
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, Duplicated, ErrorDescription, HasChildren, NotFound, NotTrashed}
 

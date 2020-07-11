@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, Tag}
-import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, Duplicated, NotFound, Required}
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, DependencyLoop, Duplicated, NotFound, Required}
 import moe.brianhsu.maidroidtask.usecase.base.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
@@ -149,6 +149,47 @@ class EditTagTest extends BaseFixtureFeature[EditTagFixture] {
       val returnedTag = response.success.value.result
       returnedTag shouldBe a[Tag]
     }
+  }
+
+  Feature("Blocking create a dependency loop when assign parent tag") {
+    Scenario("Tag depends on each other") { fixture =>
+
+      Given("tagB has a parent tag named tagA")
+      val tagA = fixture.createTag(fixture.loggedInUser, "TagA")
+      val tagB = fixture.createTag(fixture.loggedInUser, "TagB", Some(tagA.uuid))
+
+      And("user request to assign tagB as parent of tagA")
+      val request = EditTag.Request(fixture.loggedInUser, tagA.uuid, parentTagUUID = Some(Some(tagB.uuid)))
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass the validation and yield DependencyLoop error")
+      response should containsFailedValidation("parentTagUUID", DependencyLoop)
+    }
+
+    Scenario("Edit tag will create loop") { fixture =>
+      Given("A tag dependency looks like the following")
+      info("    tagA <-- tagB <-- tagC <-- tagD")
+      val tagA = fixture.createTag(fixture.loggedInUser, "TagA")
+      val tagB = fixture.createTag(fixture.loggedInUser, "TagB", Some(tagA.uuid))
+      val tagC = fixture.createTag(fixture.loggedInUser, "TagC", Some(tagB.uuid))
+      val tagD = fixture.createTag(fixture.loggedInUser, "TagD", Some(tagC.uuid))
+
+      And("user request to assign tagD as parent of tagB")
+      info("    tagA <-- tagB <-- tagC <-- tagD")
+      info("                    |                          ^")
+      info("                    +--------------------------+")
+      val request = EditTag.Request(fixture.loggedInUser, tagD.uuid, parentTagUUID = Some(Some(tagB.uuid)))
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass the validation and yield DependencyLoop error")
+      response should containsFailedValidation("parentTagUUID", DependencyLoop)
+
+    }
+
   }
 
   Feature("Edit tag in system") {

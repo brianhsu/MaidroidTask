@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, Project}
-import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, Duplicated, NotFound}
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, DependencyLoop, Duplicated, NotFound}
 import moe.brianhsu.maidroidtask.usecase.base.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
@@ -158,6 +158,47 @@ class EditProjectTest extends BaseFixtureFeature[EditProjectFixture] {
       When("it should pass the validation")
       response.success.value.result shouldBe a[Project]
     }
+  }
+
+  Feature("Blocking create a dependency loop when assign parent project") {
+    Scenario("Project depends on each other") { fixture =>
+
+      Given("projectB has a parent project named projectA")
+      val projectA = fixture.createProject(fixture.loggedInUser, "ProjectA")
+      val projectB = fixture.createProject(fixture.loggedInUser, "ProjectB", Some(projectA.uuid))
+
+      And("user request to assign projectB as parent of projectA")
+      val request = EditProject.Request(fixture.loggedInUser, projectA.uuid, parentProjectUUID = Some(Some(projectB.uuid)))
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass the validation and yield DependencyLoop error")
+      response should containsFailedValidation("parentProjectUUID", DependencyLoop)
+    }
+
+    Scenario("Edit project will create loop") { fixture =>
+      Given("A project dependency looks like the following")
+      info("    projectA <-- projectB <-- projectC <-- projectD")
+      val projectA = fixture.createProject(fixture.loggedInUser, "ProjectA")
+      val projectB = fixture.createProject(fixture.loggedInUser, "ProjectB", Some(projectA.uuid))
+      val projectC = fixture.createProject(fixture.loggedInUser, "ProjectC", Some(projectB.uuid))
+      val projectD = fixture.createProject(fixture.loggedInUser, "ProjectD", Some(projectC.uuid))
+
+      And("user request to assign projectD as parent of projectB")
+      info("    projectA <-- projectB <-- projectC <-- projectD")
+      info("                    |                          ^")
+      info("                    +--------------------------+")
+      val request = EditProject.Request(fixture.loggedInUser, projectD.uuid, parentProjectUUID = Some(Some(projectB.uuid)))
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass the validation and yield DependencyLoop error")
+      response should containsFailedValidation("parentProjectUUID", DependencyLoop)
+
+    }
+
   }
 
   Feature("Store edited project in storage") {

@@ -3,11 +3,13 @@ package moe.brianhsu.maidroidtask.usecase
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.scalatest._
 import org.scalatest.matchers.should.Matchers._
+
 import scala.language.reflectiveCalls
 import moe.brianhsu.maidroidtask.entity._
+import moe.brianhsu.maidroidtask.usecase.base.UseCase
 
 class DoNothingUseCase extends UseCase[Unit] {
-  override def groupedJournal: GroupedJournal = null
+  override def journal: Journal = null
   override def validations: List[Validations.ValidationRules] = Nil
   override def doAction(): Unit = {}
 }

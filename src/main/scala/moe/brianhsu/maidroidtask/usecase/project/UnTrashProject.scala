@@ -2,10 +2,10 @@ package moe.brianhsu.maidroidtask.usecase.project
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Change, GroupedJournal, Project, User}
+import moe.brianhsu.maidroidtask.entity.{Change, Journal, Project, User}
 import moe.brianhsu.maidroidtask.usecase.Validations.{ErrorDescription, ParentIsTrashed, ValidationRules}
 import moe.brianhsu.maidroidtask.usecase.validator.EntityValidator
-import moe.brianhsu.maidroidtask.usecase.{UseCase, UseCaseRequest, UseCaseRuntime}
+import moe.brianhsu.maidroidtask.usecase.base.{UseCase, UseCaseRequest, UseCaseRuntime}
 
 object UnTrashProject {
   case class Request(loggedInUser: User, uuid: UUID) extends UseCaseRequest
@@ -48,7 +48,7 @@ class UnTrashProject(request: UnTrashProject.Request)(implicit runtime: UseCaseR
     )
   }
 
-  override def groupedJournal: GroupedJournal = GroupedJournal(
+  override def journal: Journal = Journal(
     runtime.generator.randomUUID,
     request.loggedInUser.uuid,
     request,

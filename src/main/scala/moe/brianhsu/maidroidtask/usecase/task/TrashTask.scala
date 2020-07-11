@@ -2,10 +2,10 @@ package moe.brianhsu.maidroidtask.usecase.task
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Change, GroupedJournal, Task, User}
+import moe.brianhsu.maidroidtask.entity.{Change, Journal, Task, User}
 import moe.brianhsu.maidroidtask.gateway.repo.Readable
-import moe.brianhsu.maidroidtask.usecase.{UseCase, UseCaseRequest, UseCaseRuntime}
 import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
+import moe.brianhsu.maidroidtask.usecase.base.{UseCase, UseCaseRequest, UseCaseRuntime}
 import moe.brianhsu.maidroidtask.usecase.validator.EntityValidator
 
 object TrashTask {
@@ -28,7 +28,7 @@ class TrashTask(request: TrashTask.Request)(implicit runtime: UseCaseRuntime) ex
     updatedTask
   }
 
-  override def groupedJournal: GroupedJournal = GroupedJournal(
+  override def journal: Journal = Journal(
     runtime.generator.randomUUID,
     request.loggedInUser.uuid,
     request, journals,

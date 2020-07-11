@@ -3,9 +3,8 @@ package moe.brianhsu.maidroidtask.usecase.tag
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, Tag}
-import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, Duplicated, FailedValidation, NotFound, Required, ValidationErrors}
-import moe.brianhsu.maidroidtask.usecase.types.ResultHolder
+import moe.brianhsu.maidroidtask.usecase.base.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 class AddTagFixture extends BaseFixture {

@@ -7,7 +7,7 @@ import moe.brianhsu.maidroidtask.entity.{Project, Tag, Task, User}
 import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
 import moe.brianhsu.maidroidtask.gateway.repo.{ProjectRepo, TagRepo, TaskRepo, UserRepo}
 import moe.brianhsu.maidroidtask.gateway.repo.memory.{InMemoryData, InMemoryProjectRepo, InMemoryTagRepo, InMemoryTaskRepo}
-import moe.brianhsu.maidroidtask.usecase.{UseCaseExecutor, UseCaseRuntime}
+import moe.brianhsu.maidroidtask.usecase.base.{UseCaseExecutor, UseCaseRuntime}
 
 class TestRuntime extends UseCaseRuntime {
   class FixedTestDataGenerator extends DynamicDataGenerator {

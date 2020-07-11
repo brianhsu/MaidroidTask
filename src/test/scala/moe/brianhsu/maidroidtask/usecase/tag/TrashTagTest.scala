@@ -3,10 +3,9 @@ package moe.brianhsu.maidroidtask.usecase.tag
 import java.time.LocalDateTime
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Change, GroupedJournal, Tag}
-import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
+import moe.brianhsu.maidroidtask.entity.{Change, Journal, Tag}
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, HasChildren, NotFound}
-import moe.brianhsu.maidroidtask.usecase.types.ResultHolder
+import moe.brianhsu.maidroidtask.usecase.base.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 class TrashTagFixture extends BaseFixture {
@@ -128,7 +127,7 @@ class TrashTagTest extends BaseFixtureFeature[TrashTagFixture] {
       parentTagInStorage shouldBe trashedParentTag
 
       And("generate correct journal log")
-      inside(response.success.value.journals) { case GroupedJournal(journalUUID, userUUID, journalRequest, changes, timestamp) =>
+      inside(response.success.value.journals) { case Journal(journalUUID, userUUID, journalRequest, changes, timestamp) =>
         journalUUID shouldBe fixture.generator.randomUUID
         userUUID shouldBe fixture.loggedInUser.uuid
         journalRequest shouldBe request

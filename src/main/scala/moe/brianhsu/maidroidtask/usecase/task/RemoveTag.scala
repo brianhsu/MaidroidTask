@@ -2,9 +2,9 @@ package moe.brianhsu.maidroidtask.usecase.task
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Change, GroupedJournal, Tag, Task, User}
-import moe.brianhsu.maidroidtask.usecase.{UseCase, UseCaseRequest, UseCaseRuntime}
+import moe.brianhsu.maidroidtask.entity.{Change, Journal, Tag, Task, User}
 import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
+import moe.brianhsu.maidroidtask.usecase.base.{UseCase, UseCaseRequest, UseCaseRuntime}
 import moe.brianhsu.maidroidtask.usecase.validator.EntityValidator
 
 object RemoveTag {
@@ -26,7 +26,7 @@ class RemoveTag(request: RemoveTag.Request)
     }
   }
 
-  override def groupedJournal: GroupedJournal = GroupedJournal(
+  override def journal: Journal = Journal(
     runtime.generator.randomUUID, request.loggedInUser.uuid,
     request, journals, runtime.generator.currentTime
   )

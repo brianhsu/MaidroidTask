@@ -4,9 +4,8 @@ import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, ScheduledAt, Tag, Task}
-import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, NotFound, Required}
-import moe.brianhsu.maidroidtask.usecase.types.ResultHolder
+import moe.brianhsu.maidroidtask.usecase.base.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 class EditTaskFixture extends BaseFixture {

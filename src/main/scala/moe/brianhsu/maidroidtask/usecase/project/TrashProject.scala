@@ -2,11 +2,9 @@ package moe.brianhsu.maidroidtask.usecase.project
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Change, GroupedJournal, Project, User}
-import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
-import moe.brianhsu.maidroidtask.gateway.repo.{ProjectRepo, TaskRepo}
-import moe.brianhsu.maidroidtask.usecase.{UseCase, UseCaseRequest, UseCaseRuntime}
+import moe.brianhsu.maidroidtask.entity.{Change, Journal, Project, User}
 import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
+import moe.brianhsu.maidroidtask.usecase.base.{UseCase, UseCaseRequest, UseCaseRuntime}
 import moe.brianhsu.maidroidtask.usecase.project.TrashProject.{MoveOneLevelUp, TrashCascade}
 import moe.brianhsu.maidroidtask.usecase.validator.EntityValidator
 
@@ -81,7 +79,7 @@ class TrashProject(request: TrashProject.Request)
     Change(runtime.generator.randomUUID, oldProject, p, runtime.generator.currentTime)
   }.toList
 
-  override def groupedJournal: GroupedJournal = GroupedJournal(
+  override def journal: Journal = Journal(
     runtime.generator.randomUUID,
     request.loggedInUser.uuid,
     request,

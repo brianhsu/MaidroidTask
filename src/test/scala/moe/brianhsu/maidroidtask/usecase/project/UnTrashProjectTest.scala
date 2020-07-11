@@ -2,7 +2,7 @@ package moe.brianhsu.maidroidtask.usecase.project
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Change, GroupedJournal}
+import moe.brianhsu.maidroidtask.entity.{Change, Journal}
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, NotFound, NotTrashed, ParentIsTrashed}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
@@ -88,7 +88,7 @@ class UnTrashProjectTest extends BaseFixtureFeature[UnTrashProjectFixture]{
       projectInStorage shouldBe unTrashdProject
 
       And("generate the correct log")
-      inside(response.success.value.journals) { case GroupedJournal(journalUUID, userUUID, request, changes, timestamp) =>
+      inside(response.success.value.journals) { case Journal(journalUUID, userUUID, request, changes, timestamp) =>
         journalUUID shouldBe fixture.generator.randomUUID
         userUUID shouldBe fixture.loggedInUser.uuid
         request shouldBe unTrashRequest
@@ -118,7 +118,7 @@ class UnTrashProjectTest extends BaseFixtureFeature[UnTrashProjectFixture]{
       projectInStorage shouldBe unTrashdProject
 
       And("generate the correct log")
-      inside(response.success.value.journals) { case GroupedJournal(journalUUID, userUUID, request, changes, timestamp) =>
+      inside(response.success.value.journals) { case Journal(journalUUID, userUUID, request, changes, timestamp) =>
         journalUUID shouldBe fixture.generator.randomUUID
         userUUID shouldBe fixture.loggedInUser.uuid
         request shouldBe unTrashRequest

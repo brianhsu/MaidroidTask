@@ -1,9 +1,8 @@
 package moe.brianhsu.maidroidtask.usecase.project
 
-import java.time.{LocalDate, LocalDateTime}
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Change, GroupedJournal, HelloWorld, Project}
+import moe.brianhsu.maidroidtask.entity.{Change, Journal, Project}
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, HasChildren, NotFound}
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
@@ -106,7 +105,7 @@ class TrashProjectTest extends BaseFixtureFeature[TrashProjectFixture] {
 
       And("generate correct log")
       val journal = response.success.value.journals
-      inside(journal) { case GroupedJournal(journalUUID, userUUID, request, changes, timestamp) =>
+      inside(journal) { case Journal(journalUUID, userUUID, request, changes, timestamp) =>
         journalUUID shouldBe fixture.generator.randomUUID
         userUUID shouldBe fixture.loggedInUser.uuid
         request shouldBe trashRequest
@@ -140,7 +139,7 @@ class TrashProjectTest extends BaseFixtureFeature[TrashProjectFixture] {
       projectInStorage shouldBe trashedParentProject
 
       And("generate correct journal entry")
-      inside(response.success.value.journals) { case GroupedJournal(journalUUID, userUUID, request, changes, timestamp) =>
+      inside(response.success.value.journals) { case Journal(journalUUID, userUUID, request, changes, timestamp) =>
         journalUUID shouldBe fixture.generator.randomUUID
         userUUID shouldBe fixture.loggedInUser.uuid
         request shouldBe trashRequest
@@ -182,7 +181,7 @@ class TrashProjectTest extends BaseFixtureFeature[TrashProjectFixture] {
 
       And("generate correct log")
       val journal = response.success.value.journals
-      inside(journal) { case GroupedJournal(journalUUID, userUUID, request, changes, timestamp) =>
+      inside(journal) { case Journal(journalUUID, userUUID, request, changes, timestamp) =>
         journalUUID shouldBe fixture.generator.randomUUID
         userUUID shouldBe fixture.loggedInUser.uuid
         request shouldBe trashRequest
@@ -226,7 +225,7 @@ class TrashProjectTest extends BaseFixtureFeature[TrashProjectFixture] {
 
       And("generate correct log")
       val journal = response.success.value.journals
-      inside(journal) { case GroupedJournal(journalUUID, userUUID, request, changes, timestamp) =>
+      inside(journal) { case Journal(journalUUID, userUUID, request, changes, timestamp) =>
         journalUUID shouldBe fixture.generator.randomUUID
         userUUID shouldBe fixture.loggedInUser.uuid
         request shouldBe trashRequest
@@ -270,7 +269,7 @@ class TrashProjectTest extends BaseFixtureFeature[TrashProjectFixture] {
 
       And("generate correct log")
       val journal = response.success.value.journals
-      inside(journal) { case GroupedJournal(journalUUID, userUUID, request, changes, timestamp) =>
+      inside(journal) { case Journal(journalUUID, userUUID, request, changes, timestamp) =>
         journalUUID shouldBe fixture.generator.randomUUID
         userUUID shouldBe fixture.loggedInUser.uuid
         request shouldBe trashRequest
@@ -313,7 +312,7 @@ class TrashProjectTest extends BaseFixtureFeature[TrashProjectFixture] {
 
       And("generate correct log")
       val journal = response.success.value.journals
-      inside(journal) { case GroupedJournal(journalUUID, userUUID, request, changes, timestamp) =>
+      inside(journal) { case Journal(journalUUID, userUUID, request, changes, timestamp) =>
         journalUUID shouldBe fixture.generator.randomUUID
         userUUID shouldBe fixture.loggedInUser.uuid
         request shouldBe trashRequest
@@ -358,7 +357,7 @@ class TrashProjectTest extends BaseFixtureFeature[TrashProjectFixture] {
 
       And("generate correct log")
       val journal = response.success.value.journals
-      inside(journal) { case GroupedJournal(journalUUID, userUUID, request, changes, timestamp) =>
+      inside(journal) { case Journal(journalUUID, userUUID, request, changes, timestamp) =>
         journalUUID shouldBe fixture.generator.randomUUID
         userUUID shouldBe fixture.loggedInUser.uuid
         request shouldBe trashRequest

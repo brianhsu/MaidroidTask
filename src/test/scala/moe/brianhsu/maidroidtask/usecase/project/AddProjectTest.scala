@@ -3,9 +3,8 @@ package moe.brianhsu.maidroidtask.usecase.project
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, Project}
-import moe.brianhsu.maidroidtask.usecase.UseCaseExecutorResult
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, Duplicated, NotFound, Required}
-import moe.brianhsu.maidroidtask.usecase.types.ResultHolder
+import moe.brianhsu.maidroidtask.usecase.base.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 class AddProjectFixture extends BaseFixture {

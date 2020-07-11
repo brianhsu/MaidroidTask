@@ -1,8 +1,7 @@
 package moe.brianhsu.maidroidtask.utils.fixture
 
-import moe.brianhsu.maidroidtask.entity.Entity
 import moe.brianhsu.maidroidtask.usecase.Validations.{ErrorDescription, FailedValidation, ValidationErrors}
-import moe.brianhsu.maidroidtask.usecase.types.ResultHolder
+import moe.brianhsu.maidroidtask.usecase.base.types.ResultHolder
 import org.scalatest.TryValues
 import org.scalatest.matchers.{MatchResult, Matcher}
 

@@ -8,6 +8,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity._
+import moe.brianhsu.maidroidtask.usecase.base.{UseCase, UseCaseExecutor, UseCaseRequest}
 import org.scalatest.matchers.should.Matchers
 
 class UseCaseExecutorTest extends AnyFeatureSpec with GivenWhenThen with Matchers with TryValues {
@@ -31,7 +32,7 @@ class UseCaseExecutorTest extends AnyFeatureSpec with GivenWhenThen with Matcher
       val useCase = new UseCase[Int] {
         override def validations = Nil
         override def doAction() = 100
-        override def groupedJournal: GroupedJournal = GroupedJournal(UUID.randomUUID, UUID.randomUUID, DummyRequest, Nil, LocalDateTime.now)
+        override def journal: Journal = Journal(UUID.randomUUID, UUID.randomUUID, DummyRequest, Nil, LocalDateTime.now)
       }
 
       When("call execute() for the usecase object")
@@ -47,7 +48,7 @@ class UseCaseExecutorTest extends AnyFeatureSpec with GivenWhenThen with Matcher
 
       val useCase = new UseCase[Int] {
         override def validations = Nil
-        override def groupedJournal: GroupedJournal = null
+        override def journal: Journal = null
         override def doAction() = {
           throw new Exception("Error!")
         }
@@ -64,7 +65,7 @@ class UseCaseExecutorTest extends AnyFeatureSpec with GivenWhenThen with Matcher
       Given("A UseCase that have validation errors")
 
       val useCase = new UseCase[Int] {
-        override def groupedJournal: GroupedJournal = null
+        override def journal: Journal = null
         override def validations = createValidator(
           "someValue", 100, 
           (x: Int) => if (x < 0) None else Some(IsMalformed),
@@ -118,7 +119,7 @@ class UseCaseExecutorTest extends AnyFeatureSpec with GivenWhenThen with Matcher
 
       And("a use case with journals")
       val useCase = new UseCase[Int] {
-        override def groupedJournal: GroupedJournal = GroupedJournal(UUID.randomUUID, userUUID, DummyRequest, journalList, LocalDateTime.now)
+        override def journal: Journal = Journal(UUID.randomUUID, userUUID, DummyRequest, journalList, LocalDateTime.now)
         override def validations = Nil
         override def doAction() = 100
       }

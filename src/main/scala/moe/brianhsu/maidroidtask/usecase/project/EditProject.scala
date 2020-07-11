@@ -2,9 +2,9 @@ package moe.brianhsu.maidroidtask.usecase.project
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Change, GroupedJournal, Project, User}
-import moe.brianhsu.maidroidtask.usecase.{UseCase, UseCaseRequest, UseCaseRuntime}
+import moe.brianhsu.maidroidtask.entity.{Change, Journal, Project, User}
 import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
+import moe.brianhsu.maidroidtask.usecase.base.{UseCase, UseCaseRequest, UseCaseRuntime}
 import moe.brianhsu.maidroidtask.usecase.validator.EntityValidator
 import moe.brianhsu.maidroidtask.usecase.validator.GenericValidator
 
@@ -32,7 +32,7 @@ class EditProject(request: EditProject.Request)(implicit runtime: UseCaseRuntime
     updatedProject.get
   }
 
-  override def groupedJournal: GroupedJournal = GroupedJournal(
+  override def journal: Journal = Journal(
     runtime.generator.randomUUID, request.loggedInUser.uuid,
     request, journals, runtime.generator.currentTime
   )

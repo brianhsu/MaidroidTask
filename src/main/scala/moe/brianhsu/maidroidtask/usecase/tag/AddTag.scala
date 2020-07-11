@@ -2,11 +2,9 @@ package moe.brianhsu.maidroidtask.usecase.tag
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Change, GroupedJournal, Tag, User}
-import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
-import moe.brianhsu.maidroidtask.gateway.repo.TagRepo
-import moe.brianhsu.maidroidtask.usecase.{UseCase, UseCaseRequest, UseCaseRuntime}
+import moe.brianhsu.maidroidtask.entity.{Change, Journal, Tag, User}
 import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
+import moe.brianhsu.maidroidtask.usecase.base.{UseCase, UseCaseRequest, UseCaseRuntime}
 import moe.brianhsu.maidroidtask.usecase.validator.{EntityValidator, GenericValidator}
 
 object AddTag {
@@ -29,7 +27,7 @@ class AddTag(request: AddTag.Request)(implicit runtime: UseCaseRuntime) extends 
     tag
   }
 
-  override def groupedJournal: GroupedJournal = GroupedJournal(
+  override def journal: Journal = Journal(
     runtime.generator.randomUUID, request.loggedInUser.uuid,
     request, journals, runtime.generator.currentTime
   )

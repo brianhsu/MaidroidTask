@@ -2,19 +2,19 @@ package moe.brianhsu.maidroidtask.usecase.task
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Change, Task}
+import moe.brianhsu.maidroidtask.entity.{Change, Tag, Task}
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, NotFound}
 import moe.brianhsu.maidroidtask.usecase.base.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 class AppendTagToTaskFixture extends BaseFixture {
-  val userTag1 = createTag(loggedInUser, "ExistTag 1")
-  val userTag2 = createTag(loggedInUser, "ExistTag 2")
-  val userTag3 = createTag(loggedInUser, "ExistTag 3")
-  val otherUserTag = createTag(otherUser, "OtherUserTag")
+  val userTag1: Tag = createTag(loggedInUser, "ExistTag 1")
+  val userTag2: Tag = createTag(loggedInUser, "ExistTag 2")
+  val userTag3: Tag = createTag(loggedInUser, "ExistTag 3")
+  val otherUserTag: Tag = createTag(otherUser, "OtherUserTag")
 
-  val userTask = createTask(loggedInUser, "UserTask")
-  val otherUserTask = createTask(otherUser, "OtherUserTask")
+  val userTask: Task = createTask(loggedInUser, "UserTask")
+  val otherUserTask: Task = createTask(otherUser, "OtherUserTask")
 
   def run(request: AppendTag.Request): ResultHolder[Task] = {
     val useCase = new AppendTag(request)

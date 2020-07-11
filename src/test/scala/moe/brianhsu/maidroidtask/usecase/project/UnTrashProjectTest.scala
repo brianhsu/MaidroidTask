@@ -2,12 +2,13 @@ package moe.brianhsu.maidroidtask.usecase.project
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Change, Journal}
+import moe.brianhsu.maidroidtask.entity.{Change, Journal, Project}
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, NotFound, NotTrashed, ParentIsTrashed}
+import moe.brianhsu.maidroidtask.usecase.base.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 class UnTrashProjectFixture extends BaseFixture {
-  def run(request: UnTrashProject.Request) = {
+  def run(request: UnTrashProject.Request): ResultHolder[Project] = {
     val useCase = new UnTrashProject(request)
     useCase.execute()
   }

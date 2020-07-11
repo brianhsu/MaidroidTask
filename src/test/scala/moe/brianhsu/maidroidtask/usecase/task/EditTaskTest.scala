@@ -12,12 +12,12 @@ class EditTaskFixture extends BaseFixture {
 
   private val fixtureCreateTime = LocalDateTime.parse("2020-07-30T11:12:13")
 
-  val userTag = tagRepo.write.insert(Tag(UUID.randomUUID, loggedInUser.uuid, "ExistTag", None, isTrashed = false, generator.currentTime, generator.currentTime))
-  val otherUserTag = tagRepo.write.insert(Tag(UUID.randomUUID, otherUser.uuid, "OtherUserTag", None, isTrashed = false, generator.currentTime, generator.currentTime))
+  val userTag: Tag = tagRepo.write.insert(Tag(UUID.randomUUID, loggedInUser.uuid, "ExistTag", None, isTrashed = false, generator.currentTime, generator.currentTime))
+  val otherUserTag: Tag = tagRepo.write.insert(Tag(UUID.randomUUID, otherUser.uuid, "OtherUserTag", None, isTrashed = false, generator.currentTime, generator.currentTime))
 
-  val task1 = taskRepo.write.insert(Task(UUID.randomUUID, loggedInUser.uuid, "SomeTask 1", createTime = fixtureCreateTime, updateTime = fixtureCreateTime))
-  val task2 = taskRepo.write.insert(Task(UUID.randomUUID, loggedInUser.uuid, "SomeTask 2", createTime = fixtureCreateTime, updateTime = fixtureCreateTime))
-  val task3 = taskRepo.write.insert(
+  val task1: Task = taskRepo.write.insert(Task(UUID.randomUUID, loggedInUser.uuid, "SomeTask 1", createTime = fixtureCreateTime, updateTime = fixtureCreateTime))
+  val task2: Task = taskRepo.write.insert(Task(UUID.randomUUID, loggedInUser.uuid, "SomeTask 2", createTime = fixtureCreateTime, updateTime = fixtureCreateTime))
+  val task3: Task = taskRepo.write.insert(
     Task(
       UUID.randomUUID, loggedInUser.uuid, "SomeTask 3",
       note = Some("note"),
@@ -32,7 +32,7 @@ class EditTaskFixture extends BaseFixture {
     )
   )
 
-  val otherUserTask = taskRepo.write.insert(
+  val otherUserTask: Task = taskRepo.write.insert(
     Task(
       UUID.randomUUID, otherUser.uuid, "OtherUserTask",
       createTime = fixtureCreateTime, updateTime = fixtureCreateTime

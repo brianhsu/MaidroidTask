@@ -3,6 +3,7 @@ package moe.brianhsu.maidroidtask.usecase.task
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, Journal, Tag, Task, User}
+import moe.brianhsu.maidroidtask.gateway.repo.{TagReadable, TaskReadable}
 import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
 import moe.brianhsu.maidroidtask.usecase.base.{UseCase, UseCaseRequest, UseCaseRuntime}
 import moe.brianhsu.maidroidtask.usecase.validator.EntityValidator
@@ -45,8 +46,8 @@ class RemoveTag(request: RemoveTag.Request)
   }
 
   override def validations: List[ValidationRules] = {
-    implicit val taskRead = runtime.taskRepo.read
-    implicit val tagRead = runtime.tagRepo.read
+    implicit val taskRead: TaskReadable = runtime.taskRepo.read
+    implicit val tagRead: TagReadable = runtime.tagRepo.read
 
     groupByField(
       createValidator("uuid", request.uuid,

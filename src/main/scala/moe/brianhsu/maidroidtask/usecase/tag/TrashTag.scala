@@ -3,6 +3,7 @@ package moe.brianhsu.maidroidtask.usecase.tag
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, Journal, Tag, User}
+import moe.brianhsu.maidroidtask.gateway.repo.TagReadable
 import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
 import moe.brianhsu.maidroidtask.usecase.base.{UseCase, UseCaseRequest, UseCaseRuntime}
 import moe.brianhsu.maidroidtask.usecase.task.RemoveTag
@@ -25,7 +26,7 @@ class TrashTag(request: TrashTag.Request)(implicit runtime: UseCaseRuntime) exte
     )
   }
 
-  private def cleanupTaskTags() = {
+  private def cleanupTaskTags(): Unit = {
     runtime.taskRepo.read.findByTag(request.uuid).foreach { task =>
       val useCase = new RemoveTag(RemoveTag.Request(request.loggedInUser, task.uuid, request.uuid))
       val response = useCase.execute()
@@ -50,7 +51,7 @@ class TrashTag(request: TrashTag.Request)(implicit runtime: UseCaseRuntime) exte
 
   override def validations: List[ValidationRules] = {
 
-    implicit val tagRead = runtime.tagRepo.read
+    implicit val tagRead: TagReadable = runtime.tagRepo.read
 
     groupByField(
       createValidator("uuid", request.uuid,

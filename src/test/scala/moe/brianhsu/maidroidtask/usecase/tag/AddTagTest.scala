@@ -3,13 +3,13 @@ package moe.brianhsu.maidroidtask.usecase.tag
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, Tag}
-import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, Duplicated, FailedValidation, NotFound, Required, ValidationErrors}
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, Duplicated, NotFound, Required}
 import moe.brianhsu.maidroidtask.usecase.base.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 class AddTagFixture extends BaseFixture {
-  val uuidInSystem = UUID.fromString("fedc2a03-031c-4c3f-8e8d-176009f5928")
-  val otherUserTagUUID = UUID.fromString("8d077394-7e32-4e86-a721-b14bd004f2a8")
+  val uuidInSystem: UUID = UUID.fromString("fedc2a03-031c-4c3f-8e8d-176009f5928")
+  val otherUserTagUUID: UUID = UUID.fromString("8d077394-7e32-4e86-a721-b14bd004f2a8")
 
   tagRepo.write.insert(Tag(uuidInSystem, loggedInUser.uuid, "ExistTag", None, isTrashed = false, generator.currentTime, generator.currentTime))
   tagRepo.write.insert(Tag(otherUserTagUUID, otherUser.uuid, "OtherUserTag", None, isTrashed = false, generator.currentTime, generator.currentTime))

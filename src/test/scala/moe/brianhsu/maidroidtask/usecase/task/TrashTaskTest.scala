@@ -9,12 +9,12 @@ import moe.brianhsu.maidroidtask.usecase.base.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 class TrashTaskFixture extends BaseFixture {
-  val otherUserTaskUUID = UUID.fromString("e334b225-d4b7-406a-a20d-3b0050a14b12")
-  val taskUUID = UUID.fromString("8c2f648b-bbf3-4c00-978d-d910a5c7249e")
+  val otherUserTaskUUID: UUID = UUID.fromString("e334b225-d4b7-406a-a20d-3b0050a14b12")
+  val taskUUID: UUID = UUID.fromString("8c2f648b-bbf3-4c00-978d-d910a5c7249e")
   private val fixtureCreateTime = LocalDateTime.parse("2020-07-30T11:12:13")
 
-  val otherUserTask = taskRepo.write.insert(Task(otherUserTaskUUID, otherUser.uuid, "Task of Other User", createTime = fixtureCreateTime, updateTime = fixtureCreateTime))
-  val userTask = taskRepo.write.insert(Task(taskUUID, loggedInUser.uuid, "Task of LoggedIn User", createTime = fixtureCreateTime, updateTime = fixtureCreateTime))
+  val otherUserTask: Task = taskRepo.write.insert(Task(otherUserTaskUUID, otherUser.uuid, "Task of Other User", createTime = fixtureCreateTime, updateTime = fixtureCreateTime))
+  val userTask: Task = taskRepo.write.insert(Task(taskUUID, loggedInUser.uuid, "Task of LoggedIn User", createTime = fixtureCreateTime, updateTime = fixtureCreateTime))
 
   def run(request: TrashTask.Request): ResultHolder[Task] = {
     val useCase = new TrashTask(request)

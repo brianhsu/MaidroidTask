@@ -3,6 +3,7 @@ package moe.brianhsu.maidroidtask.usecase.project
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, Journal, Project, User}
+import moe.brianhsu.maidroidtask.gateway.repo.ProjectReadable
 import moe.brianhsu.maidroidtask.usecase.Validations.{DependencyLoop, ValidationRules}
 import moe.brianhsu.maidroidtask.usecase.base.{UseCase, UseCaseRequest, UseCaseRuntime}
 import moe.brianhsu.maidroidtask.usecase.validator.EntityValidator
@@ -44,7 +45,7 @@ class EditProject(request: EditProject.Request)(implicit runtime: UseCaseRuntime
   override def validations: List[ValidationRules] = {
 
     import GenericValidator._
-    implicit val projectRepo = runtime.projectRepo.read
+    implicit val projectRepo: ProjectReadable = runtime.projectRepo.read
 
     def notCreateDependencyLoop(uuid: UUID) = {
       val hasLoop = oldProject.exists(_.hasLoopsWith(uuid))

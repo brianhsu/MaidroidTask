@@ -21,7 +21,7 @@ class UseCaseExecutorTest extends AnyFeatureSpec with GivenWhenThen with Matcher
     info("As a developer,")
     info("I want to execute UseCases using UseCaseExecutor")
 
-    implicit val executor = new UseCaseExecutor
+    implicit val executor: UseCaseExecutor = new UseCaseExecutor
 
     Scenario("Run UseCase without any error") {
       Given("A UseCase that should not have any error")
@@ -29,8 +29,8 @@ class UseCaseExecutorTest extends AnyFeatureSpec with GivenWhenThen with Matcher
         override def uuid: UUID = UUID.randomUUID
       }
 
-      val useCase = new UseCase[Int] {
-        override def validations = Nil
+      val useCase: UseCase[Int] = new UseCase[Int] {
+        override def validations: List[ValidationRules] = Nil
         override def doAction() = 100
         override def journal: Journal = Journal(UUID.randomUUID, UUID.randomUUID, DummyRequest, Nil, LocalDateTime.now)
       }
@@ -45,10 +45,10 @@ class UseCaseExecutorTest extends AnyFeatureSpec with GivenWhenThen with Matcher
     Scenario("Run UseCase throw runtime error") {
       Given("A UseCase that throw runtime error in doAction()")
 
-      val useCase = new UseCase[Int] {
-        override def validations = Nil
+      val useCase: UseCase[Int] = new UseCase[Int] {
+        override def validations: List[ValidationRules] = Nil
         override def journal: Journal = null
-        override def doAction() = {
+        override def doAction(): Int = {
           throw new Exception("Error!")
         }
       }
@@ -65,7 +65,7 @@ class UseCaseExecutorTest extends AnyFeatureSpec with GivenWhenThen with Matcher
 
       val useCase = new UseCase[Int] {
         override def journal: Journal = null
-        override def validations = createValidator(
+        override def validations: List[ValidationRules] = createValidator(
           "someValue", 100, 
           (x: Int) => if (x < 0) None else Some(IsMalformed),
           (x: Int) => if (x > 1000) None else Some(AccessDenied)
@@ -86,16 +86,17 @@ class UseCaseExecutorTest extends AnyFeatureSpec with GivenWhenThen with Matcher
   }
 
   Feature("Run UseCase with UseCaseExecutor to log journal entry") {
-    implicit val executor = new UseCaseExecutor {
+    implicit object LoggedExecutor extends UseCaseExecutor {
       var loggedJournals: List[Change] = Nil
 
-      override def appendJournals(journals: List[Change]) = {
+      override def appendJournals(journals: List[Change]): Unit = {
         this.loggedJournals = journals
       }
     }
 
     Scenario("Run UseCase with journals") {
       Given("a bunch of journals")
+
       case object InsertedEntity extends Entity {
         override def uuid: UUID = UUID.randomUUID
       }
@@ -117,17 +118,17 @@ class UseCaseExecutorTest extends AnyFeatureSpec with GivenWhenThen with Matcher
       )
 
       And("a use case with journals")
-      val useCase = new UseCase[Int] {
+      val useCase: UseCase[Int] = new UseCase[Int] {
         override def journal: Journal = Journal(UUID.randomUUID, userUUID, DummyRequest, journalList, LocalDateTime.now)
-        override def validations = Nil
-        override def doAction() = 100
+        override def validations: List[ValidationRules] = Nil
+        override def doAction(): Int = 100
       }
 
       When("execute with UseCaseExecutor")
       val result = useCase.execute()
 
       Then("UseCaseExecutor should call appendLogs correctly")
-      executor.loggedJournals shouldBe journalList
+      LoggedExecutor.loggedJournals shouldBe journalList
     }
   }
 

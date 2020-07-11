@@ -3,6 +3,7 @@ package moe.brianhsu.maidroidtask.usecase.tag
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, Journal, Tag, User}
+import moe.brianhsu.maidroidtask.gateway.repo.TagReadable
 import moe.brianhsu.maidroidtask.usecase.Validations.{DependencyLoop, ValidationRules}
 import moe.brianhsu.maidroidtask.usecase.base.{UseCase, UseCaseRequest, UseCaseRuntime}
 import moe.brianhsu.maidroidtask.usecase.validator.{EntityValidator, GenericValidator}
@@ -41,7 +42,7 @@ class EditTag(request: EditTag.Request)(implicit runtime: UseCaseRuntime) extend
   override def validations: List[ValidationRules] = {
 
     import GenericValidator.option
-    implicit val tagRead = runtime.tagRepo.read
+    implicit val tagRead: TagReadable = runtime.tagRepo.read
 
     def notCreateDependencyLoop(uuid: UUID) = {
       val hasLoop = oldTag.exists(_.hasLoopsWith(uuid))

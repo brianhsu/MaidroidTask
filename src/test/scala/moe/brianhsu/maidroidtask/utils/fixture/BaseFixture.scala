@@ -5,7 +5,7 @@ import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Project, Tag, Task, User}
 import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
-import moe.brianhsu.maidroidtask.gateway.repo.{ProjectRepo, TagRepo, TaskRepo, UserRepo}
+import moe.brianhsu.maidroidtask.gateway.repo.{ProjectRepo, TagRepo, TaskRepo}
 import moe.brianhsu.maidroidtask.gateway.repo.memory.{InMemoryData, InMemoryProjectRepo, InMemoryTagRepo, InMemoryTaskRepo}
 import moe.brianhsu.maidroidtask.usecase.base.{UseCaseExecutor, UseCaseRuntime}
 
@@ -26,7 +26,7 @@ class TestRuntime extends UseCaseRuntime {
 
 class BaseFixture {
 
-  implicit val runtime = new TestRuntime
+  implicit val runtime: TestRuntime = new TestRuntime
 
   implicit val generator: DynamicDataGenerator = runtime.generator
   implicit val useCaseExecutor: UseCaseExecutor = new UseCaseExecutor
@@ -39,7 +39,7 @@ class BaseFixture {
 
   def createTag(user: User, name: String,
                 parentTagUIUID: Option[UUID] = None,
-                isTrashed: Boolean = false) = {
+                isTrashed: Boolean = false): Tag = {
     tagRepo.write.insert(
       Tag(
         UUID.randomUUID, user.uuid,
@@ -53,7 +53,7 @@ class BaseFixture {
                  description: String,
                  tags: List[UUID] = Nil,
                  projectUUID: Option[UUID] = None,
-                 isTrashed: Boolean = false) = {
+                 isTrashed: Boolean = false): Task = {
     taskRepo.write.insert(
       Task(
         UUID.randomUUID, user.uuid, description,
@@ -67,7 +67,7 @@ class BaseFixture {
   }
 
   def createProject(user: User, name: String, parentProject: Option[UUID] = None,
-                    isTrashed: Boolean = false) = {
+                    isTrashed: Boolean = false): Project = {
     projectRepo.write.insert(
       Project(
         UUID.randomUUID, user.uuid, name,

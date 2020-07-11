@@ -3,6 +3,7 @@ package moe.brianhsu.maidroidtask.usecase.project
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, Journal, Project, User}
+import moe.brianhsu.maidroidtask.gateway.repo.ProjectReadable
 import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
 import moe.brianhsu.maidroidtask.usecase.base.{UseCase, UseCaseRequest, UseCaseRuntime}
 import moe.brianhsu.maidroidtask.usecase.project.TrashProject.{MoveOneLevelUp, TrashCascade}
@@ -63,7 +64,7 @@ class TrashProject(request: TrashProject.Request)
 
   override def validations: List[ValidationRules] = {
 
-    implicit val projectRead = runtime.projectRepo.read
+    implicit val projectRead: ProjectReadable = runtime.projectRepo.read
 
     groupByField(
       createValidator("uuid", request.uuid,

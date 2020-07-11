@@ -1,6 +1,6 @@
 package moe.brianhsu.maidroidtask.gateway.repo
 
-import java.time.{LocalDateTime}
+import java.time.LocalDateTime
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.Task

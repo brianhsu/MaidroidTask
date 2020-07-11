@@ -2,22 +2,20 @@ package moe.brianhsu.maidroidtask.usecase.task
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Change, Task}
+import moe.brianhsu.maidroidtask.entity.{Change, Tag, Task}
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, NotFound}
 import moe.brianhsu.maidroidtask.usecase.base.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
-import scala.util.Try
-
 class RemoveTagFixture extends BaseFixture {
 
-  val userTag1 = createTag(loggedInUser, "User Tag1")
-  val userTag2 = createTag(loggedInUser, "User Tag2")
-  val userTag3 = createTag(loggedInUser, "User Tag3")
+  val userTag1: Tag = createTag(loggedInUser, "User Tag1")
+  val userTag2: Tag = createTag(loggedInUser, "User Tag2")
+  val userTag3: Tag = createTag(loggedInUser, "User Tag3")
 
-  val otherUserTag = createTag(otherUser, "Other User Tag")
-  val userTask = createTask(loggedInUser, "Task1")
-  val otherUserTask = createTask(otherUser, "Other User Task")
+  val otherUserTag: Tag = createTag(otherUser, "Other User Tag")
+  val userTask: Task = createTask(loggedInUser, "Task1")
+  val otherUserTask: Task = createTask(otherUser, "Other User Task")
 
   def run(request: RemoveTag.Request): ResultHolder[Task] = {
     val useCase = new RemoveTag(request)

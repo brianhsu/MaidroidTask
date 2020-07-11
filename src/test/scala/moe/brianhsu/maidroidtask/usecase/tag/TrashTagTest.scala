@@ -10,11 +10,11 @@ import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 class TrashTagFixture extends BaseFixture {
 
-  val fixtureCreateTime = LocalDateTime.now
+  val fixtureCreateTime: LocalDateTime = LocalDateTime.now
 
-  val otherUserTag = Tag(UUID.randomUUID(), otherUser.uuid, "OtherUserTag", None, isTrashed = false, fixtureCreateTime, fixtureCreateTime)
-  val parentTag = Tag(UUID.randomUUID(), loggedInUser.uuid, "ParentTag", None, isTrashed = false, fixtureCreateTime, fixtureCreateTime)
-  val childTag = Tag(UUID.randomUUID(), loggedInUser.uuid, "ChildTag", Some(parentTag.uuid), isTrashed = false, fixtureCreateTime, fixtureCreateTime)
+  val otherUserTag: Tag = Tag(UUID.randomUUID(), otherUser.uuid, "OtherUserTag", None, isTrashed = false, fixtureCreateTime, fixtureCreateTime)
+  val parentTag: Tag = Tag(UUID.randomUUID(), loggedInUser.uuid, "ParentTag", None, isTrashed = false, fixtureCreateTime, fixtureCreateTime)
+  val childTag: Tag = Tag(UUID.randomUUID(), loggedInUser.uuid, "ChildTag", Some(parentTag.uuid), isTrashed = false, fixtureCreateTime, fixtureCreateTime)
 
   tagRepo.write.insert(otherUserTag)
   tagRepo.write.insert(parentTag)

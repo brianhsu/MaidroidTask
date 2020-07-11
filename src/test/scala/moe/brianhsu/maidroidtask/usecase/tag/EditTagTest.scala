@@ -9,17 +9,17 @@ import moe.brianhsu.maidroidtask.usecase.base.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 class EditTagFixture extends BaseFixture {
-  val otherUserTagUUID = UUID.fromString("341342e6-ee4f-465d-ae7d-4f2f9d33448f")
-  val tag1UUID = UUID.fromString("c97675c1-6443-45da-ac91-feb94bf7a185")
-  val tag2UUID = UUID.fromString("1c7760e2-be7a-4ba0-83ce-bdfd8a5446f2")
+  val otherUserTagUUID: UUID = UUID.fromString("341342e6-ee4f-465d-ae7d-4f2f9d33448f")
+  val tag1UUID: UUID = UUID.fromString("c97675c1-6443-45da-ac91-feb94bf7a185")
+  val tag2UUID: UUID = UUID.fromString("1c7760e2-be7a-4ba0-83ce-bdfd8a5446f2")
   val otherUserTagName = "OtherUserTag"
   val existTagName = "SomeTag"
 
-  val fixtureCreateTime = LocalDateTime.now
+  val fixtureCreateTime: LocalDateTime = LocalDateTime.now
 
-  val otherUserTag = tagRepo.write.insert(Tag(otherUserTagUUID, otherUser.uuid, otherUserTagName, None, isTrashed = false, fixtureCreateTime, fixtureCreateTime))
-  val tag1 = tagRepo.write.insert(Tag(tag1UUID, loggedInUser.uuid, "UserTag", None, isTrashed = false, fixtureCreateTime, fixtureCreateTime))
-  val tag2 = tagRepo.write.insert(Tag(tag2UUID, loggedInUser.uuid, existTagName, None, isTrashed = false, fixtureCreateTime, fixtureCreateTime))
+  val otherUserTag: Tag = tagRepo.write.insert(Tag(otherUserTagUUID, otherUser.uuid, otherUserTagName, None, isTrashed = false, fixtureCreateTime, fixtureCreateTime))
+  val tag1: Tag = tagRepo.write.insert(Tag(tag1UUID, loggedInUser.uuid, "UserTag", None, isTrashed = false, fixtureCreateTime, fixtureCreateTime))
+  val tag2: Tag = tagRepo.write.insert(Tag(tag2UUID, loggedInUser.uuid, existTagName, None, isTrashed = false, fixtureCreateTime, fixtureCreateTime))
 
   def run(request: EditTag.Request): ResultHolder[Tag] = {
     val useCase = new EditTag(request)

@@ -4,10 +4,11 @@ import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, Journal, Project}
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, HasChildren, NotFound}
+import moe.brianhsu.maidroidtask.usecase.base.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 class TrashProjectFixture extends BaseFixture {
-  def run(request: TrashProject.Request) = {
+  def run(request: TrashProject.Request): ResultHolder[Project] = {
     val useCase = new TrashProject(request)
     useCase.execute()
   }
@@ -187,7 +188,7 @@ class TrashProjectTest extends BaseFixtureFeature[TrashProjectFixture] {
         request shouldBe trashRequest
         changes should contain theSameElementsAs List(
           Change(fixture.generator.randomUUID, Some(userProject), projectInStorage, fixture.generator.currentTime),
-          Change(fixture.generator.randomUUID, Some(task1), taskInStorage(0), fixture.generator.currentTime),
+          Change(fixture.generator.randomUUID, Some(task1), taskInStorage.head, fixture.generator.currentTime),
           Change(fixture.generator.randomUUID, Some(task2), taskInStorage(1), fixture.generator.currentTime),
           Change(fixture.generator.randomUUID, Some(task3), taskInStorage(2), fixture.generator.currentTime)
         )
@@ -275,7 +276,7 @@ class TrashProjectTest extends BaseFixtureFeature[TrashProjectFixture] {
         request shouldBe trashRequest
         changes should contain theSameElementsAs List(
           Change(fixture.generator.randomUUID, Some(userProject), projectInStorage, fixture.generator.currentTime),
-          Change(fixture.generator.randomUUID, Some(task1), taskInStorage(0), fixture.generator.currentTime),
+          Change(fixture.generator.randomUUID, Some(task1), taskInStorage.head, fixture.generator.currentTime),
           Change(fixture.generator.randomUUID, Some(task2), taskInStorage(1), fixture.generator.currentTime),
           Change(fixture.generator.randomUUID, Some(task3), taskInStorage(2), fixture.generator.currentTime),
         )
@@ -363,7 +364,7 @@ class TrashProjectTest extends BaseFixtureFeature[TrashProjectFixture] {
         request shouldBe trashRequest
         changes should contain theSameElementsAs List(
           Change(fixture.generator.randomUUID, Some(userProject), projectInStorage, fixture.generator.currentTime),
-          Change(fixture.generator.randomUUID, Some(task1), taskInStorage(0), fixture.generator.currentTime),
+          Change(fixture.generator.randomUUID, Some(task1), taskInStorage.head, fixture.generator.currentTime),
           Change(fixture.generator.randomUUID, Some(task2), taskInStorage(1), fixture.generator.currentTime),
           Change(fixture.generator.randomUUID, Some(task3), taskInStorage(2), fixture.generator.currentTime),
         )

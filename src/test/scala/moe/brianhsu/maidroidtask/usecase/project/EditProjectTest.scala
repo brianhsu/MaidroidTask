@@ -9,8 +9,8 @@ import moe.brianhsu.maidroidtask.usecase.base.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 class EditProjectFixture extends BaseFixture {
-  val userProject = createProject(loggedInUser, "Some Project")
-  val otherUserProject = createProject(otherUser, "OtherUserProject")
+  val userProject: Project = createProject(loggedInUser, "Some Project")
+  val otherUserProject: Project = createProject(otherUser, "OtherUserProject")
 
   def run(request: EditProject.Request): ResultHolder[Project] = {
     val useCase = new EditProject(request)

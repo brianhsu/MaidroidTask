@@ -12,10 +12,10 @@ class AddTaskFixture extends BaseFixture {
 
   private val fixtureCreateTime = LocalDateTime.parse("2020-07-30T11:12:13")
 
-  val userTag = tagRepo.write.insert(Tag(UUID.randomUUID, loggedInUser.uuid, "ExistTag", None, isTrashed = false, generator.currentTime, generator.currentTime))
-  val otherUserTag = tagRepo.write.insert(Tag(UUID.randomUUID, otherUser.uuid, "OtherUserTag", None, isTrashed = false, generator.currentTime, generator.currentTime))
+  val userTag: Tag = tagRepo.write.insert(Tag(UUID.randomUUID, loggedInUser.uuid, "ExistTag", None, isTrashed = false, generator.currentTime, generator.currentTime))
+  val otherUserTag: Tag = tagRepo.write.insert(Tag(UUID.randomUUID, otherUser.uuid, "OtherUserTag", None, isTrashed = false, generator.currentTime, generator.currentTime))
 
-  val userTask = taskRepo.write.insert(
+  val userTask: Task = taskRepo.write.insert(
     Task(
       UUID.randomUUID, loggedInUser.uuid, "Description",
       createTime = fixtureCreateTime,
@@ -215,7 +215,6 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
         due = request.due,
         scheduledAt = request.scheduledAt,
         isDone = true,
-        isTrashed = false,
         createTime = fixture.generator.currentTime,
         updateTime = fixture.generator.currentTime
       )

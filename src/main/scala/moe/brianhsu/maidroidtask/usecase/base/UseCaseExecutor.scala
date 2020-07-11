@@ -23,6 +23,6 @@ class UseCaseExecutor {
     }
   }
 
-  def appendJournals(journals: List[Change]) = {}
+  def appendJournals(journals: List[Change]): Unit = {}
 }
 

@@ -1,7 +1,7 @@
 package moe.brianhsu.maidroidtask.utils.fixture
 
 import moe.brianhsu.maidroidtask.entity.Task
-import org.scalatest.{GivenWhenThen, Inside, Inspectors, OptionValues, Outcome, TryValues}
+import org.scalatest.{Assertion, GivenWhenThen, Inside, Inspectors, OptionValues, Outcome, TryValues}
 import org.scalatest.featurespec.FixtureAnyFeatureSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -13,7 +13,7 @@ trait BaseFixtureFeature[T] extends FixtureAnyFeatureSpec with GivenWhenThen
   override protected def withFixture(test: OneArgTest): Outcome = test(createFixture)
   override type FixtureParam = T
 
-  def isSameTask(task: Task, expectedTask: Task) = {
+  def isSameTask(task: Task, expectedTask: Task): Assertion = {
     inside(task) { case Task(uuid, userUUID, description, note, project, tags,
     dependsOn, waitUntil, due, scheduledAt,
     isDone, isTrashed, createTime, updateTime) =>

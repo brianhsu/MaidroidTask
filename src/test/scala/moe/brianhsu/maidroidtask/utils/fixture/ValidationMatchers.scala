@@ -5,7 +5,7 @@ import moe.brianhsu.maidroidtask.usecase.base.types.ResultHolder
 import org.scalatest.TryValues
 import org.scalatest.matchers.{MatchResult, Matcher}
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 
 trait ValidationMatchers {
 
@@ -14,18 +14,18 @@ trait ValidationMatchers {
   class ValidationMatcher(field: String, errorDescription: ErrorDescription) extends Matcher[ResultHolder[_]] {
     override def apply(left: ResultHolder[_]): MatchResult = {
       left match {
-        case Success(_) => MatchResult(matches = false, s"$left is not a Failure", s"$left is a Failure")
+        case success: Success[_] => MatchResult(matches = false, s"$left is not a Failure", s"$left is a Failure")
         case Failure(ValidationErrors(failedValidations)) =>
           MatchResult(
             failedValidations.contains(FailedValidation(field, errorDescription)),
-            s"${failedValidations} does not contains FailedValidation($field, $errorDescription)",
-            s"${failedValidations} contains FailedValidation($field, $errorDescription)"
+            s"$failedValidations does not contains FailedValidation($field, $errorDescription)",
+            s"$failedValidations contains FailedValidation($field, $errorDescription)"
           )
         case Failure(exception) =>
           MatchResult(
             matches = false,
-            s"${exception} is not a ValidationErrors",
-            s"${exception} is a ValidationErrors",
+            s"$exception is not a ValidationErrors",
+            s"$exception is a ValidationErrors",
           )
       }
     }

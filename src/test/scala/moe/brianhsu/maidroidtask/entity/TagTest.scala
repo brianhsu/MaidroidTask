@@ -1,5 +1,6 @@
 package moe.brianhsu.maidroidtask.entity
 
+import moe.brianhsu.maidroidtask.gateway.repo.TagReadable
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
 class TagFixture extends BaseFixture
@@ -9,7 +10,7 @@ class TagTest extends BaseFixtureFeature[TagFixture] {
 
   Feature("Circular dependency detection") {
     Scenario("The current tag has no parent tag") { fixture =>
-      implicit val tagRepo = fixture.tagRepo.read
+      implicit val tagRepo: TagReadable = fixture.tagRepo.read
 
       Given("a tag dependency looks like the following")
       info("    tagA <-- tagB <-- tagC <-- tagD")
@@ -29,7 +30,7 @@ class TagTest extends BaseFixtureFeature[TagFixture] {
     }
 
     Scenario("Tag depends on each other") { fixture =>
-      implicit val tagRepo = fixture.tagRepo.read
+      implicit val tagRepo: TagReadable = fixture.tagRepo.read
 
       Given("tagB has a parent tag named tagA")
       val tagA = fixture.createTag(fixture.loggedInUser, "TagA")
@@ -43,7 +44,7 @@ class TagTest extends BaseFixtureFeature[TagFixture] {
     }
 
     Scenario("Root parent tag add to tag outside of dependency") { fixture =>
-      implicit val tagRepo = fixture.tagRepo.read
+      implicit val tagRepo: TagReadable = fixture.tagRepo.read
 
       Given("A tag dependency looks like the following")
       info("    tagA <-- tagB <-- tagC <-- tagD")
@@ -66,7 +67,7 @@ class TagTest extends BaseFixtureFeature[TagFixture] {
     }
 
     Scenario("Creating loop for tag dependency") { fixture =>
-      implicit val tagRepo = fixture.tagRepo.read
+      implicit val tagRepo: TagReadable = fixture.tagRepo.read
 
       Given("A tag dependency looks like the following")
       info("    tagA <-- tagB <-- tagC <-- tagD")

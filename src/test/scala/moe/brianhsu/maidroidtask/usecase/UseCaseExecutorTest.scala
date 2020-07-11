@@ -37,7 +37,6 @@ class UseCaseExecutorTest extends AnyFeatureSpec with GivenWhenThen with Matcher
 
       When("call execute() for the usecase object")
       val result = useCase.execute()
-      println(result.get)
 
       Then("it should return Success contains the correct value")
       result.success.value.result shouldBe 100

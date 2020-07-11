@@ -16,24 +16,22 @@ case class Tag(uuid: UUID, userUUID: UUID,
                                           with NamedEntity
                                           with TrashableEntity {
 
-  def hasLoopsWith(uuid: UUID)(implicit tagReadable: Readable[Tag]): Boolean = {
+  def hasLoopsWith(thatUUID: UUID)(implicit tagReadable: Readable[Tag]): Boolean = {
 
     @tailrec
     def hasLoopsInParent(parentProjectHolder: Option[Tag]): Boolean = {
       parentProjectHolder match {
         case None => false
-        case Some(p) if p.parentTagUUID.contains(uuid) => true
+        case Some(p) if p.parentTagUUID.contains(thatUUID) => true
         case Some(p) => hasLoopsInParent(p.parentTagUUID.flatMap(tagReadable.findByUUID))
       }
     }
 
-    val projectHolder = tagReadable.findByUUID(uuid)
-    projectHolder match {
-      case None => false
-      case Some(project) =>
-        project.parentTagUUID.contains(this.uuid) ||
-          hasLoopsInParent(parentTagUUID.flatMap(tagReadable.findByUUID))
-    }
+    val thatTag = tagReadable.findByUUID(thatUUID)
+    val isDependsOnEachOther = thatTag.exists(_.parentTagUUID contains this.uuid)
+    val parentTagHolder = parentTagUUID.flatMap(tagReadable.findByUUID)
+
+    isDependsOnEachOther || hasLoopsInParent(parentTagHolder)
   }
 
 }

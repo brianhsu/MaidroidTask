@@ -5,7 +5,7 @@ import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, Journal, ScheduledAt, Tag, Task, User}
 import moe.brianhsu.maidroidtask.gateway.repo.Readable
-import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
+import moe.brianhsu.maidroidtask.usecase.Validations.{DependencyLoop, ValidationRules}
 import moe.brianhsu.maidroidtask.usecase.base.{UseCase, UseCaseRequest, UseCaseRuntime}
 import moe.brianhsu.maidroidtask.usecase.validator.{EntityValidator, GenericValidator}
 
@@ -65,6 +65,11 @@ class EditTask(request: EditTask.Request)(implicit runtime: UseCaseRuntime) exte
 
     import GenericValidator.option
 
+    def notCreateDependencyLoop(uuidList: List[UUID]) = {
+      val hasLoop = uuidList.exists(uuid => oldTask.exists(_.hasLoopsWith(uuid)))
+      if (hasLoop) Some(DependencyLoop) else None
+    }
+
     groupByField(
       createValidator("uuid", request.uuid,
         EntityValidator.exist[Task],
@@ -72,7 +77,10 @@ class EditTask(request: EditTask.Request)(implicit runtime: UseCaseRuntime) exte
         EntityValidator.notTrashed[Task]
       ),
       createValidator("description", request.description, option(GenericValidator.notEmpty)),
-      createValidator("dependsOn", request.dependsOn, option(EntityValidator.allExist[Task])),
+      createValidator("dependsOn", request.dependsOn,
+        option(EntityValidator.allExist[Task]),
+        option(notCreateDependencyLoop)
+      ),
       createValidator("tags", request.tags,
         option(EntityValidator.allExist[Tag]),
         option(EntityValidator.allBelongToUser[Tag](request.loggedInUser)),

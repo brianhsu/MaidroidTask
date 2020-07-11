@@ -4,7 +4,7 @@ import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, ScheduledAt, Tag, Task}
-import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, NotFound, Required}
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, DependencyLoop, NotFound, Required}
 import moe.brianhsu.maidroidtask.usecase.base.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
@@ -156,6 +156,71 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
       Then("is should NOT pass the validation and yield NotFound error")
       response should containsFailedValidation("tags", AccessDenied)
     }
+  }
+
+  Feature("Blocking create a dependency loop when assign parent task") {
+    Scenario("Task depends on each other") { fixture =>
+
+      Given("taskB has a parent task named taskA")
+      val taskA = fixture.createTask(fixture.loggedInUser, "TaskA")
+      val taskB = fixture.createTask(fixture.loggedInUser, "TaskB", dependsOn = List(taskA.uuid))
+
+      And("user request to assign taskB as parent of taskA")
+      val request = EditTask.Request(fixture.loggedInUser, taskA.uuid, dependsOn = Some(List(taskB.uuid)))
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass the validation and yield DependencyLoop error")
+      response should containsFailedValidation("dependsOn", DependencyLoop)
+    }
+
+    Scenario("Edit task will create loop") { fixture =>
+      Given("A task dependency looks like the following")
+      info("    taskA <-- taskB <-- taskC <-- taskD")
+      val taskA = fixture.createTask(fixture.loggedInUser, "TaskA")
+      val taskB = fixture.createTask(fixture.loggedInUser, "TaskB", dependsOn = List(taskA.uuid))
+      val taskC = fixture.createTask(fixture.loggedInUser, "TaskC", dependsOn = List(taskB.uuid))
+      val taskD = fixture.createTask(fixture.loggedInUser, "TaskD", dependsOn = List(taskC.uuid))
+
+      And("user request to assign taskD as parent of taskB")
+      info("    taskA <-- taskB <-- taskC <-- taskD")
+      info("                 |                   ^ ")
+      info("                 +-------------------+ ")
+      val request = EditTask.Request(fixture.loggedInUser, taskD.uuid, dependsOn = Some(List(taskB.uuid)))
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass the validation and yield DependencyLoop error")
+      response should containsFailedValidation("dependsOn", DependencyLoop)
+    }
+
+    Scenario("Edit task will create loop, for multiple depednsOn") { fixture =>
+      Given("A task dependency looks like the following")
+      info("    taskA <-- taskB <-- taskC <-- taskD")
+      info("              taskE <-+                ")
+
+      val taskA = fixture.createTask(fixture.loggedInUser, "TaskA")
+      val taskB = fixture.createTask(fixture.loggedInUser, "TaskB", dependsOn = List(taskA.uuid))
+      val taskE = fixture.createTask(fixture.loggedInUser, "TaskA")
+      val taskC = fixture.createTask(fixture.loggedInUser, "TaskC", dependsOn = List(taskB.uuid, taskE.uuid))
+      val taskD = fixture.createTask(fixture.loggedInUser, "TaskD", dependsOn = List(taskC.uuid))
+
+      And("user request to assign taskD as parent of taskB")
+      info("    taskA <-- taskB <-- taskC <-- taskD")
+      info("              taskE <-+                ")
+      info("                 |                   ^ ")
+      info("                 +-------------------+ ")
+      val request = EditTask.Request(fixture.loggedInUser, taskD.uuid, dependsOn = Some(List(taskE.uuid)))
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass the validation and yield DependencyLoop error")
+      response should containsFailedValidation("dependsOn", DependencyLoop)
+    }
+
   }
 
   Feature("Update task in system") {

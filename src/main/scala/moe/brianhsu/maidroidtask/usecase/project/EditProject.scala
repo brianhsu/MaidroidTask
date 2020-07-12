@@ -19,8 +19,8 @@ object EditProject {
 
 class EditProject(request: EditProject.Request)(implicit runtime: UseCaseRuntime) extends UseCase[Project] {
 
-  private lazy val oldProject = runtime.projectRepo.read.findByUUID(request.uuid)
-  private lazy val updatedProject = oldProject.map { project =>
+  private lazy val currentProject = runtime.projectRepo.read.findByUUID(request.uuid)
+  private lazy val updatedProject = currentProject.map { project =>
     project.copy(
       name = request.name.getOrElse(project.name),
       note = request.note.getOrElse(project.note),
@@ -39,7 +39,7 @@ class EditProject(request: EditProject.Request)(implicit runtime: UseCaseRuntime
   )
 
   private def journals: List[Change] = updatedProject.map { project =>
-    Change(runtime.generator.randomUUID, oldProject, project, runtime.generator.currentTime)
+    Change(runtime.generator.randomUUID, currentProject, project, runtime.generator.currentTime)
   }.toList
 
   override def validations: List[ValidationRules] = {
@@ -47,8 +47,8 @@ class EditProject(request: EditProject.Request)(implicit runtime: UseCaseRuntime
     import GenericValidator._
     implicit val projectRepo: ProjectReadable = runtime.projectRepo.read
 
-    def notCreateDependencyLoop(uuid: UUID) = {
-      val hasLoop = oldProject.exists(_.hasLoopsWith(uuid))
+    def notCreateDependencyLoop(thatUUID: UUID) = {
+      val hasLoop = currentProject.exists { p => p.uuid == thatUUID || p.hasLoopsWith(thatUUID) }
       if (hasLoop) Some(DependencyLoop) else None
     }
 

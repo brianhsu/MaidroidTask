@@ -8,6 +8,100 @@ class TaskFixture extends BaseFixture
 class TaskTest extends BaseFixtureFeature[TaskFixture] {
   override protected def createFixture: TaskFixture = new TaskFixture
 
+  Feature("Get blocking task list") {
+    Scenario("Current task is not blocking any task") { fixture =>
+      implicit val taskRead: TaskReadable = fixture.taskRepo.read
+
+      Given("A task named currentTask")
+      val currentTask = fixture.createTask(fixture.loggedInUser, "CurrentTask")
+
+      And("there is no task depends on currentTask")
+      When("get blocking list of currentTask")
+      val blocking = currentTask.blocking
+
+      Then("it should be empty list")
+      blocking shouldBe Nil
+    }
+
+    Scenario("Current task is blocking other two tasks") { fixture =>
+      implicit val taskRead: TaskReadable = fixture.taskRepo.read
+
+      Given("A task named currentTask")
+      val currentTask = fixture.createTask(fixture.loggedInUser, "CurrentTask")
+      val otherTask = fixture.createTask(fixture.loggedInUser, "OtherTask")
+
+      And("several tasks that depends on currentTask")
+      val task1 = fixture.createTask(fixture.loggedInUser, "Task1", dependsOn = List(currentTask.uuid))
+      val task2 = fixture.createTask(fixture.loggedInUser, "Task2", dependsOn = List(currentTask.uuid, otherTask.uuid))
+
+      When("get blocking list of currentTask")
+      val blocking = currentTask.blocking
+
+      Then("it should return all task depends on currentTask")
+      blocking should contain theSameElementsAs List(task1, task2)
+    }
+
+    Scenario("Current task is blocking other two (trashed / done) tasks") { fixture =>
+      implicit val taskRead: TaskReadable = fixture.taskRepo.read
+
+      Given("A task named currentTask")
+      val currentTask = fixture.createTask(fixture.loggedInUser, "CurrentTask")
+      val otherTask = fixture.createTask(fixture.loggedInUser, "OtherTask")
+
+      And("a trashed tasks that depends on currentTask")
+      val task1 = fixture.createTask(
+        fixture.loggedInUser, "trashedTask",
+        dependsOn = List(currentTask.uuid),
+        isTrashed = true
+      )
+
+      And("a done tasks that depends on currentTask")
+      val task2 = fixture.createTask(
+        fixture.loggedInUser, "doneTask",
+        dependsOn = List(currentTask.uuid, otherTask.uuid),
+        isDone = true
+      )
+
+      When("get blocking list of currentTask")
+      val blocking = currentTask.blocking
+
+      Then("it should return empty list")
+      blocking shouldBe Nil
+    }
+
+    Scenario("Current task is blocking several tasks with different status") { fixture =>
+      implicit val taskRead: TaskReadable = fixture.taskRepo.read
+
+      Given("A task named currentTask")
+      val currentTask = fixture.createTask(fixture.loggedInUser, "CurrentTask")
+      val otherTask = fixture.createTask(fixture.loggedInUser, "OtherTask")
+
+      And("a trashed tasks that depends on currentTask")
+      val trashedTask = fixture.createTask(
+        fixture.loggedInUser, "trashedTask",
+        dependsOn = List(currentTask.uuid),
+        isTrashed = true
+      )
+
+      And("two normal tasks depends on currentTask")
+      val task1 = fixture.createTask(fixture.loggedInUser, "Task1", dependsOn = List(currentTask.uuid))
+      val task2 = fixture.createTask(fixture.loggedInUser, "Task2", dependsOn = List(currentTask.uuid))
+
+      And("a done tasks that depends on currentTask")
+      val doneTask = fixture.createTask(
+        fixture.loggedInUser, "doneTask",
+        dependsOn = List(currentTask.uuid, otherTask.uuid),
+        isDone = true
+      )
+
+      When("get blocking list of currentTask")
+      val blocking = currentTask.blocking
+
+      Then("it should return those two normal tasks")
+      blocking should contain theSameElementsAs List(task1, task2)
+    }
+
+  }
   Feature("Circular dependency detection") {
     Scenario("The current task has no parent task") { fixture =>
       implicit val taskRepo: TaskReadable = fixture.taskRepo.read

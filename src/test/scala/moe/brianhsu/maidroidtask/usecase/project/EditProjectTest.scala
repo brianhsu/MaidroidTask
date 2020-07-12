@@ -161,6 +161,20 @@ class EditProjectTest extends BaseFixtureFeature[EditProjectFixture] {
   }
 
   Feature("Blocking create a dependency loop when assign parent project") {
+    Scenario("Project depends on itself") { fixture =>
+      Given("a project without any parent project")
+      val project = fixture.createProject(fixture.loggedInUser, "Project")
+
+      And("user request to assign itself as parent project")
+      val request = EditProject.Request(fixture.loggedInUser, project.uuid, parentProjectUUID = Some(Some(project.uuid)))
+
+      When("run the request")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass the validation and yield ParentSelf error")
+      println(response)
+    }
+
     Scenario("Project depends on each other") { fixture =>
 
       Given("projectB has a parent project named projectA")

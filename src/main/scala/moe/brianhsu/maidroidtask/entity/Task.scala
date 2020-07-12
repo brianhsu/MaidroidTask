@@ -3,9 +3,7 @@ package moe.brianhsu.maidroidtask.entity
 import java.time.LocalDateTime
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.gateway.repo.Readable
-
-import scala.annotation.tailrec
+import moe.brianhsu.maidroidtask.gateway.repo.{Readable, TaskReadable, TaskRepo}
 
 case class Task(uuid: UUID, userUUID: UUID,
                 description: String,
@@ -20,6 +18,11 @@ case class Task(uuid: UUID, userUUID: UUID,
                 isTrashed: Boolean = false,
                 createTime: LocalDateTime,
                 updateTime: LocalDateTime) extends EntityWithUserId with TrashableEntity {
+
+  def blocking(implicit taskRead: TaskReadable): List[Task] = {
+    taskRead.findByDependsOn(this.uuid)
+      .filterNot(t => t.isDone || t.isTrashed)
+  }
 
   def hasLoopsWith(thatUUID: UUID)(implicit taskRead: Readable[Task]): Boolean = {
     val thatTask = taskRead.findByUUID(thatUUID)

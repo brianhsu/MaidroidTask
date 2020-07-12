@@ -54,7 +54,8 @@ class BaseFixture {
                  tags: List[UUID] = Nil,
                  projectUUID: Option[UUID] = None,
                  dependsOn: List[UUID] = Nil,
-                 isTrashed: Boolean = false): Task = {
+                 isTrashed: Boolean = false,
+                 isDone: Boolean = false): Task = {
     taskRepo.write.insert(
       Task(
         UUID.randomUUID, user.uuid, description,
@@ -62,6 +63,7 @@ class BaseFixture {
         project = projectUUID,
         dependsOn = dependsOn,
         isTrashed = isTrashed,
+        isDone = isDone,
         createTime = LocalDateTime.now,
         updateTime = LocalDateTime.now
       )

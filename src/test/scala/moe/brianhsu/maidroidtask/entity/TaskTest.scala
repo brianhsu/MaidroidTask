@@ -8,6 +8,85 @@ class TaskFixture extends BaseFixture
 class TaskTest extends BaseFixtureFeature[TaskFixture] {
   override protected def createFixture: TaskFixture = new TaskFixture
 
+  Feature("Get blockedBy task list") {
+    Scenario("Current task is not blocked by any task") { fixture =>
+      implicit val taskRead: TaskReadable = fixture.taskRepo.read
+
+      Given("A task named currentTask")
+      val currentTask = fixture.createTask(fixture.loggedInUser, "CurrentTask")
+
+      And("there currentTask does not depends on any task")
+      When("call blockedBy method on currentTask")
+      val blockedBy = currentTask.blockedBy
+
+      Then("it should return empty list")
+      blockedBy shouldBe Nil
+    }
+
+    Scenario("Current task is blocked by other two tasks") { fixture =>
+      implicit val taskRead: TaskReadable = fixture.taskRepo.read
+
+      Given("A task named currentTask")
+      And("there currentTask depends on two task")
+      val task1 = fixture.createTask(fixture.loggedInUser, "Task1")
+      val task2 = fixture.createTask(fixture.loggedInUser, "Task2")
+
+      val currentTask = fixture.createTask(
+        fixture.loggedInUser, "CurrentTask",
+        dependsOn = List(task1.uuid, task2.uuid)
+      )
+
+      When("call blockedBy method on currentTask")
+      val blockedBy = currentTask.blockedBy
+
+      Then("it should return list contains those two tasks")
+      blockedBy should contain theSameElementsAs List(task1, task2)
+    }
+
+    Scenario("Current task is blocked by other two trashed / done tasks") { fixture =>
+      implicit val taskRead: TaskReadable = fixture.taskRepo.read
+
+      Given("A task named currentTask")
+      And("there currentTask depends on two task that already trashed or done")
+      val task1 = fixture.createTask(fixture.loggedInUser, "Task1", isDone = true)
+      val task2 = fixture.createTask(fixture.loggedInUser, "Task2", isTrashed = true)
+
+      val currentTask = fixture.createTask(
+        fixture.loggedInUser, "CurrentTask",
+        dependsOn = List(task1.uuid, task2.uuid)
+      )
+
+      When("call blockedBy method on currentTask")
+      val blockedBy = currentTask.blockedBy
+
+      Then("it should return empty list")
+      blockedBy shouldBe Nil
+    }
+
+    Scenario("Current task is blocked by other tasks that has different status") { fixture =>
+      implicit val taskRead: TaskReadable = fixture.taskRepo.read
+
+      Given("A task named currentTask")
+      And("there currentTask depends on two task that already trashed or done")
+      And("another tasks that is in normal status")
+      val task1 = fixture.createTask(fixture.loggedInUser, "Task1", isDone = true)
+      val task2 = fixture.createTask(fixture.loggedInUser, "Task2", isTrashed = true)
+      val task3 = fixture.createTask(fixture.loggedInUser, "Task3")
+      val task4 = fixture.createTask(fixture.loggedInUser, "Task4")
+
+      val currentTask = fixture.createTask(
+        fixture.loggedInUser, "CurrentTask",
+        dependsOn = List(task1.uuid, task2.uuid, task3.uuid, task4.uuid)
+      )
+
+      When("call blockedBy method on currentTask")
+      val blockedBy = currentTask.blockedBy
+
+      Then("it should return list contains those tasks that status is normal")
+      blockedBy should contain theSameElementsAs List(task3, task4)
+    }
+  }
+
   Feature("Get blocking task list") {
     Scenario("Current task is not blocking any task") { fixture =>
       implicit val taskRead: TaskReadable = fixture.taskRepo.read

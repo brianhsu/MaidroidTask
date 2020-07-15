@@ -24,6 +24,11 @@ case class Task(uuid: UUID, userUUID: UUID,
       .filterNot(t => t.isDone || t.isTrashed)
   }
 
+  def blockedBy(implicit taskRead: TaskReadable): List[Task] = {
+    this.dependsOn.flatMap(taskRead.findByUUID)
+      .filterNot(t => t.isDone || t.isTrashed)
+  }
+
   def hasLoopsWith(thatUUID: UUID)(implicit taskRead: Readable[Task]): Boolean = {
     val thatTask = taskRead.findByUUID(thatUUID)
     val isDependsOnEachOther = thatTask.exists(_.dependsOn contains this.uuid)

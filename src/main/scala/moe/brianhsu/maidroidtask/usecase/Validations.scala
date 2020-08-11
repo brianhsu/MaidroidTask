@@ -1,5 +1,7 @@
 package moe.brianhsu.maidroidtask.usecase
 
+import java.util.UUID
+
 object Validations {
   type ValidationRules = () => Option[FailedValidation]
   type Validator[T] = T => Option[ErrorDescription]
@@ -18,6 +20,13 @@ object Validations {
   case object NotTrashed extends ErrorDescription
   case object ParentIsTrashed extends ErrorDescription
   case object DependencyLoop extends ErrorDescription
+  
+  object BreakingChain {
+    trait Operation
+    case object MarkAsDone extends Operation
+    case object MarkAsUndone extends Operation
+  }
+  case class BreakingChain(operation: BreakingChain.Operation, blocking: List[UUID], blockedBy: List[UUID]) extends ErrorDescription
 
 }
 

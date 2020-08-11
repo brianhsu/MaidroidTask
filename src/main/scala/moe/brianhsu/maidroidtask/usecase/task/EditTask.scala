@@ -4,8 +4,9 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, Journal, ScheduledAt, Tag, Task, User}
-import moe.brianhsu.maidroidtask.gateway.repo.Readable
-import moe.brianhsu.maidroidtask.usecase.Validations.{DependencyLoop, ValidationRules}
+import moe.brianhsu.maidroidtask.gateway.repo.{Readable, TagReadable, TagRepo, TaskReadable}
+import moe.brianhsu.maidroidtask.usecase.Validations.BreakingChain.MarkAsDone
+import moe.brianhsu.maidroidtask.usecase.Validations.{BreakingChain, DependencyLoop, ErrorDescription, ValidationRules}
 import moe.brianhsu.maidroidtask.usecase.base.{UseCase, UseCaseRequest, UseCaseRuntime}
 import moe.brianhsu.maidroidtask.usecase.validator.{EntityValidator, GenericValidator}
 
@@ -60,14 +61,26 @@ class EditTask(request: EditTask.Request)(implicit runtime: UseCaseRuntime) exte
 
   override def validations: List[ValidationRules] = {
 
-    implicit val readable: Readable[Task] = runtime.taskRepo.read
-    implicit val tagReadable: Readable[Tag] = runtime.tagRepo.read
+    implicit val taskReadable: TaskReadable = runtime.taskRepo.read
+    implicit val tagReadable: TagReadable = runtime.tagRepo.read
 
     import GenericValidator.option
 
-    def notCreateDependencyLoop(uuidList: List[UUID]) = {
+    def notCreateDependencyLoop(uuidList: List[UUID]): Option[ErrorDescription] = {
       val hasLoop = uuidList.exists(uuid => oldTask.exists(_.hasLoopsWith(uuid)))
       if (hasLoop) Some(DependencyLoop) else None
+    }
+
+    def notBreakingChain(isDone: Boolean): Option[ErrorDescription] = {
+      val blockedBy: List[UUID] = getBlockedBy(taskReadable)
+      val blocking: List[UUID] = taskReadable.findByDependsOn(request.uuid).map(_.uuid)
+      val doesNotBreakDependencyChain = blockedBy == Nil && blocking == Nil
+
+      if (!isDone || doesNotBreakDependencyChain) {
+        None
+      } else {
+        Some(BreakingChain(MarkAsDone, blocking, blockedBy))
+      }
     }
 
     groupByField(
@@ -85,8 +98,20 @@ class EditTask(request: EditTask.Request)(implicit runtime: UseCaseRuntime) exte
         option(EntityValidator.allExist[Tag]),
         option(EntityValidator.allBelongToUser[Tag](request.loggedInUser)),
         option(EntityValidator.allNotTrashed[Tag])
+      ),
+      createValidator("isDone", request.isDone,
+        option(notBreakingChain)
       )
     )
   }
 
+  private def getBlockedBy(readable: Readable[Task]): List[UUID] = {
+    for {
+      currentTask <- readable.findByUUID(request.uuid).toList
+      parentTaskUUID <- currentTask.dependsOn
+      nonCompleteTask <- readable.findByUUID(parentTaskUUID).filterNot(_.isDone)
+    } yield {
+      nonCompleteTask.uuid
+    }
+  }
 }

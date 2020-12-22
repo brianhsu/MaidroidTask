@@ -5,7 +5,7 @@ import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, Journal, ScheduledAt, Tag, Task, User}
 import moe.brianhsu.maidroidtask.gateway.repo.{Readable, TagReadable, TagRepo, TaskReadable}
-import moe.brianhsu.maidroidtask.usecase.Validations.BreakingChain.MarkAsDone
+import moe.brianhsu.maidroidtask.usecase.Validations.BreakingChain.{MarkAsDone, MarkAsPending}
 import moe.brianhsu.maidroidtask.usecase.Validations.{BreakingChain, DependencyLoop, ErrorDescription, ValidationRules}
 import moe.brianhsu.maidroidtask.usecase.base.{UseCase, UseCaseRequest, UseCaseRuntime}
 import moe.brianhsu.maidroidtask.usecase.validator.{EntityValidator, GenericValidator}
@@ -71,15 +71,28 @@ class EditTask(request: EditTask.Request)(implicit runtime: UseCaseRuntime) exte
       if (hasLoop) Some(DependencyLoop) else None
     }
 
-    def notBreakingChain(isDone: Boolean): Option[ErrorDescription] = {
+    def isChainBreakWhenMarkAsDone: Option[BreakingChain] = {
       val blockedBy: List[UUID] = getBlockedBy(taskReadable)
       val blocking: List[UUID] = taskReadable.findByDependsOn(request.uuid).map(_.uuid)
-      val doesNotBreakDependencyChain = blockedBy == Nil && blocking == Nil
 
-      if (!isDone || doesNotBreakDependencyChain) {
-        None
-      } else {
-        Some(BreakingChain(MarkAsDone, blocking, blockedBy))
+      (blockedBy, blocking) match {
+        case (Nil, Nil) => None
+        case _          => Some(BreakingChain(MarkAsDone, blocking, blockedBy))
+      }
+    }
+
+    def isChainBreakWhenMarkAsPending: Option[BreakingChain] = {
+      val blocking: List[UUID] = taskReadable.findByDependsOn(request.uuid)
+        .filter(_.isDone)
+        .map(_.uuid)
+
+      if (blocking.isEmpty) None else Some(BreakingChain(MarkAsPending, blocking, Nil))
+    }
+
+    def notBreakingChain(isDone: Boolean): Option[ErrorDescription] = {
+      isDone match {
+        case true  => isChainBreakWhenMarkAsDone
+        case false => isChainBreakWhenMarkAsPending
       }
     }
 

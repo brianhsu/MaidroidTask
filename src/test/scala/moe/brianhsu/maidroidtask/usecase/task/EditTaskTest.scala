@@ -4,7 +4,7 @@ import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.util.UUID
 
 import moe.brianhsu.maidroidtask.entity.{Change, ScheduledAt, Tag, Task}
-import moe.brianhsu.maidroidtask.usecase.Validations.BreakingChain.MarkAsDone
+import moe.brianhsu.maidroidtask.usecase.Validations.BreakingChain.{MarkAsDone, MarkAsPending}
 import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, BreakingChain, DependencyLoop, NotFound, Required}
 import moe.brianhsu.maidroidtask.usecase.base.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
@@ -225,14 +225,29 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
   }
 
   Feature("Detect dependency chain been break") {
-    Scenario("Prevent chain break due to mark leaf blocked task as done") { fixture =>
+    Scenario("Chain break due to mark leaf blocked task as done") { fixture =>
       Given("A task named taskD that depends on completed task named taskA, and un-completed taskB, taskC")
+      info(
+        """
+          |  O TaskD
+          |     V TaskA
+          |     O TaskB
+          |     O TaskC
+          |""".stripMargin)
       val taskA = fixture.createTask(fixture.loggedInUser, "TaskA", isDone = true)
       val taskB = fixture.createTask(fixture.loggedInUser, "TaskB", isDone = false)
       val taskC = fixture.createTask(fixture.loggedInUser, "TaskC", isDone = false)
       val taskD = fixture.createTask(fixture.loggedInUser, "TaskD", dependsOn = List(taskA.uuid, taskB.uuid, taskC.uuid))
 
-      And("user request to mark taskB as done while taskA is still in pending mode")
+      And("user request to mark taskD as done while taskB, taskC is still in pending mode")
+      info(
+        """
+          |  V TaskD
+          |     V TaskA
+          |     O TaskB
+          |     O TaskC
+          |""".stripMargin)
+
       val request = EditTask.Request(fixture.loggedInUser, taskD.uuid, isDone = Some(true))
 
       When("run the use case")
@@ -243,7 +258,7 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
       response should containsFailedValidation("isDone", BreakingChain(MarkAsDone, Nil, List(taskB.uuid, taskC.uuid)))
     }
 
-    Scenario("Prevent chain break due to mark middle level blocked task as done") { fixture =>
+    Scenario("Chain break due to mark middle level blocked task as done") { fixture =>
       Given("A task named taskD that depends on a completed task named taskA, uncompleted taskB and taskC")
       val taskA = fixture.createTask(fixture.loggedInUser, "TaskA", isDone = true)
       val taskB = fixture.createTask(fixture.loggedInUser, "TaskB", isDone = false)
@@ -251,9 +266,25 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
       val taskD = fixture.createTask(fixture.loggedInUser, "TaskD", dependsOn = List(taskA.uuid, taskB.uuid, taskC.uuid))
 
       And("A task named taskE that depends on taskD")
+      info(
+        """
+          |  O TaskE
+          |     O TaskD
+          |        V TaskA
+          |        O TaskB
+          |        O TaskC
+          |""".stripMargin)
       val taskE = fixture.createTask(fixture.loggedInUser, "TaskE", dependsOn = List(taskD.uuid))
 
       And("user request to mark taskD as done while taskB, taskC is still in pending mode")
+      info(
+        """
+          |  O TaskE
+          |     V TaskD
+          |        V TaskA
+          |        O TaskB
+          |        O TaskC
+          |""".stripMargin)
       val request = EditTask.Request(fixture.loggedInUser, taskD.uuid, isDone = Some(true))
 
       When("run the use case")
@@ -265,12 +296,82 @@ class EditTaskTest extends BaseFixtureFeature[EditTaskFixture] {
       response should containsFailedValidation("isDone", BreakingChain(MarkAsDone, List(taskE.uuid), List(taskB.uuid, taskC.uuid)))
     }
 
-    Scenario("Prevent chain break due to mark parent task as not done, when child task is mark as done") { fixture =>
-      Given("A task completed taskB depends on a completed taskA")
+    Scenario("Chain break due to mark leaf task as pending, when parent task is mark as done") { fixture =>
+      Given("A completed taskC, uncompleted taskB both depends on a completed taskA")
+      info(
+        """
+          |  O TaskC
+          |     V TaskA
+          |  V TaskB
+          |     V TaskA
+          |""".stripMargin)
+      val taskA = fixture.createTask(fixture.loggedInUser, "TaskA", isDone = true)
+      val taskB = fixture.createTask(fixture.loggedInUser, "TaskB", isDone = true, dependsOn = List(taskA.uuid))
+      val taskC = fixture.createTask(fixture.loggedInUser, "TaskC", isDone = false, dependsOn = List(taskA.uuid))
+
       And("user request to mark taskA as not completed")
+      info(
+        """
+          |  O TaskC
+          |     V TaskA
+          |  V TaskB
+          |     V TaskA
+          |""".stripMargin)
+      val request = EditTask.Request(fixture.loggedInUser, taskA.uuid, isDone = Some(false))
+
       When("run the use case")
+      val response = fixture.run(request)
+
       Then("it should NOT pass the validation and yield DependencyBreak error")
       And("the error contains the blocking information")
+      response should containsFailedValidation("isDone", BreakingChain(MarkAsPending, List(taskB.uuid), Nil))
+    }
+
+    Scenario("Chain break due to mark middle level as not completed, when parent is done") { fixture =>
+      Given("A task list looks like the following")
+      info(
+        """
+          |  V TaskD
+          |     V TaskC
+          |        V TaskB
+          |        V TaskA
+          |""".stripMargin)
+      val taskA = fixture.createTask(fixture.loggedInUser, "TaskA", isDone = true)
+      val taskB = fixture.createTask(fixture.loggedInUser, "TaskB", isDone = true)
+      val taskC = fixture.createTask(fixture.loggedInUser, "TaskC", isDone = true, dependsOn = List(taskA.uuid, taskB.uuid))
+      val taskD = fixture.createTask(fixture.loggedInUser, "TaskD", isDone = true, dependsOn = List(taskC.uuid))
+
+      And("user request to mark taskC as not completed")
+      info(
+        """
+          |  V TaskD
+          |     O TaskC
+          |        V TaskB
+          |        V TaskA
+          |""".stripMargin)
+      val request = EditTask.Request(fixture.loggedInUser, taskC.uuid, isDone = Some(false))
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass the validation and yield DependencyBreak error")
+      And("the error contains the blocking information")
+      response should containsFailedValidation("isDone", BreakingChain(MarkAsPending, List(taskD.uuid), Nil))
+    }
+
+    Scenario("Not breaking chain when mark root node as done") { fixture =>
+      pending
+    }
+
+    Scenario("Not breaking chain when mark middle node as done") { fixture =>
+      pending
+    }
+
+    Scenario("Not breaking chain when mark leaf node as not completed") { fixture =>
+      pending
+    }
+
+    Scenario("Not breaking chain when mark middle node as not completed") { fixture =>
       pending
     }
   }

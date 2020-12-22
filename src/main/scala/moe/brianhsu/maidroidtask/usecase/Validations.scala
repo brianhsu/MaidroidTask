@@ -20,11 +20,11 @@ object Validations {
   case object NotTrashed extends ErrorDescription
   case object ParentIsTrashed extends ErrorDescription
   case object DependencyLoop extends ErrorDescription
-  
+
   object BreakingChain {
     trait Operation
     case object MarkAsDone extends Operation
-    case object MarkAsUndone extends Operation
+    case object MarkAsPending extends Operation
   }
   case class BreakingChain(operation: BreakingChain.Operation, blocking: List[UUID], blockedBy: List[UUID]) extends ErrorDescription
 

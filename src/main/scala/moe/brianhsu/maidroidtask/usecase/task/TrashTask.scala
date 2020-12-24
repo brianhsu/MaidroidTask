@@ -2,42 +2,48 @@ package moe.brianhsu.maidroidtask.usecase.task
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Journal, Task, TrashLog, User}
-import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
-import moe.brianhsu.maidroidtask.gateway.repo.{UserBasedReadable, TaskRepo}
-import moe.brianhsu.maidroidtask.usecase.UseCase
-import moe.brianhsu.maidroidtask.usecase.Validations.{Duplicated, ValidationRules}
+import moe.brianhsu.maidroidtask.entity.{Change, Journal, Task, User}
+import moe.brianhsu.maidroidtask.gateway.repo.Readable
+import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
+import moe.brianhsu.maidroidtask.usecase.base.{UseCase, UseCaseRequest, UseCaseRuntime}
 import moe.brianhsu.maidroidtask.usecase.validator.EntityValidator
 
 object TrashTask {
-  case class Request(loggedInUser: User, uuid: UUID)
+  case class Request(loggedInUser: User, uuid: UUID) extends UseCaseRequest
 }
 
-class TrashTask(request: TrashTask.Request)(implicit taskRepo: TaskRepo, generator: DynamicDataGenerator) extends UseCase[Task] {
+class TrashTask(request: TrashTask.Request)(implicit runtime: UseCaseRuntime) extends UseCase[Task] {
 
-  private lazy val updatedTaskHolder: Option[Task] = taskRepo
-    .read
-    .findByUUID(request.uuid)
-    .map(_.copy(
+  private lazy val oldTask = runtime.taskRepo.read.findByUUID(request.uuid)
+  private lazy val updatedTaskHolder: Option[Task] = oldTask.map { task =>
+    task.copy(
       isTrashed = true,
-      updateTime = generator.currentTime
-    ))
+      updateTime = runtime.generator.currentTime
+    )
+  }
 
   override def doAction(): Task = {
     val updatedTask = updatedTaskHolder.get
-    taskRepo.write.update(updatedTask.uuid, updatedTask)
+    runtime.taskRepo.write.update(updatedTask.uuid, updatedTask)
     updatedTask
   }
 
-  override def journals: List[Journal] = updatedTaskHolder.map(task =>
-    TrashLog(
-      generator.randomUUID, request.loggedInUser.uuid, request.uuid,
-      task, generator.currentTime
+  override def journal: Journal = Journal(
+    runtime.generator.randomUUID,
+    request.loggedInUser.uuid,
+    request, journals,
+    runtime.generator.currentTime
+  )
+
+  private def journals: List[Change] = updatedTaskHolder.map(task =>
+    Change(
+      runtime.generator.randomUUID, oldTask, task,
+      runtime.generator.currentTime
     )
   ).toList
 
   override def validations: List[ValidationRules] = {
-    implicit val readable: UserBasedReadable[Task] = taskRepo.read
+    implicit val readable: Readable[Task] = runtime.taskRepo.read
 
     groupByField(
       createValidator("uuid", request.uuid,

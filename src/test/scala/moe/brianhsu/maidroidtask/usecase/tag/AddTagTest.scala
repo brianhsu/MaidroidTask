@@ -2,22 +2,21 @@ package moe.brianhsu.maidroidtask.usecase.tag
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{InsertLog, Journal, Tag}
-import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, FailedValidation, NotFound, Required, ValidationErrors}
+import moe.brianhsu.maidroidtask.entity.{Change, Tag}
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, Duplicated, NotFound, Required}
+import moe.brianhsu.maidroidtask.usecase.base.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
-import scala.util.Try
-
 class AddTagFixture extends BaseFixture {
-  val uuidInSystem = UUID.fromString("fedc2a03-031c-4c3f-8e8d-176009f5928")
-  val otherUserTagUUID = UUID.fromString("8d077394-7e32-4e86-a721-b14bd004f2a8")
+  val uuidInSystem: UUID = UUID.fromString("fedc2a03-031c-4c3f-8e8d-176009f5928")
+  val otherUserTagUUID: UUID = UUID.fromString("8d077394-7e32-4e86-a721-b14bd004f2a8")
 
   tagRepo.write.insert(Tag(uuidInSystem, loggedInUser.uuid, "ExistTag", None, isTrashed = false, generator.currentTime, generator.currentTime))
   tagRepo.write.insert(Tag(otherUserTagUUID, otherUser.uuid, "OtherUserTag", None, isTrashed = false, generator.currentTime, generator.currentTime))
 
-  def run(request: AddTag.Request): (Try[Tag], List[Journal]) = {
+  def run(request: AddTag.Request): ResultHolder[Tag] = {
     val useCase = new AddTag(request)
-    (useCase.execute(), useCase.journals)
+    useCase.execute()
   }
 }
 
@@ -34,7 +33,7 @@ class AddTagTest extends BaseFixtureFeature[AddTagFixture] {
       val request = AddTag.Request(fixture.loggedInUser, fixture.uuidInSystem, "TagName")
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should NOT pass validation and yield Duplicated error")
       response should containsFailedValidation("uuid", Duplicated)
@@ -45,7 +44,7 @@ class AddTagTest extends BaseFixtureFeature[AddTagFixture] {
       val request = AddTag.Request(fixture.loggedInUser, fixture.generator.randomUUID, "    \n \t   ")
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should NOT pass validation and yield Required error")
       response should containsFailedValidation("name", Required)
@@ -60,7 +59,7 @@ class AddTagTest extends BaseFixtureFeature[AddTagFixture] {
       )
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should NOT pass validation and yield NotFound error")
       response should containsFailedValidation("parentTagUUID", NotFound)
@@ -74,10 +73,70 @@ class AddTagTest extends BaseFixtureFeature[AddTagFixture] {
       )
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should NOT pass validation and yield NotFound error")
       response should containsFailedValidation("parentTagUUID", AccessDenied)
+    }
+
+    Scenario("There are same tag name in system for logged in user") { fixture =>
+      Given("user request to add tag that has duplicate name in system")
+      val request = AddTag.Request(
+        fixture.loggedInUser,
+        fixture.generator.randomUUID,
+        "ExistTag"
+      )
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass validation and yield Duplicate error")
+      response should containsFailedValidation("name", Duplicated)
+    }
+
+    Scenario("Add a tag with parent tag which is delete") { fixture =>
+      Given("user request to add a tag with a delete parent tag")
+      val trashedTag = fixture.createTag(fixture.loggedInUser, "TrashedTag", isTrashed = true)
+      val request = AddTag.Request(fixture.loggedInUser, UUID.randomUUID, "Tag", Some(trashedTag.uuid))
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass validation and yield AlreadyTrashed error")
+      response should containsFailedValidation("parentTagUUID", AlreadyTrashed)
+    }
+
+    Scenario("There are same tag name in system for other user") { fixture =>
+      Given("user request to add tag that has duplicate name in system, but belongs to other user")
+      val request = AddTag.Request(
+        fixture.loggedInUser,
+        fixture.generator.randomUUID,
+        "OtherUserTag"
+      )
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass validation and yield Duplicate error")
+      response.success.value.result shouldBe a[Tag]
+    }
+
+    Scenario("There is same tag name, but has been delete") { fixture =>
+      Given("user has a deleted tag")
+      val deletedTag = fixture.createTag(fixture.loggedInUser, "TagName", isTrashed = true)
+
+      And("user request to add a tag has same name")
+      val request = AddTag.Request(
+        fixture.loggedInUser,
+        fixture.generator.randomUUID,
+        "TagName"
+      )
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should pass the validation")
+      response.success.value.result shouldBe a[Tag]
     }
 
     Scenario("Validation passed") { fixture =>
@@ -85,11 +144,10 @@ class AddTagTest extends BaseFixtureFeature[AddTagFixture] {
       val request = AddTag.Request(fixture.loggedInUser, fixture.generator.randomUUID, "TagName")
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should pass the validation")
-      val tag = response.success.value
-      tag shouldBe a[Tag]
+      response.success.value.result shouldBe a[Tag]
     }
   }
 
@@ -104,10 +162,10 @@ class AddTagTest extends BaseFixtureFeature[AddTagFixture] {
       val request = AddTag.Request(fixture.loggedInUser, newTagUUID, "TagName", parentTagUUID)
 
       When("run the use case")
-      val (response, journals) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("the returned tag should contains correct information")
-      val returnedTag = response.success.value
+      val returnedTag = response.success.value.result
       inside(returnedTag) { case Tag(uuid, userUUID, name, parentTagUUID, isDeleted, createTime, updateTime) =>
         uuid shouldBe request.uuid
         userUUID shouldBe request.loggedInUser.uuid
@@ -123,8 +181,8 @@ class AddTagTest extends BaseFixtureFeature[AddTagFixture] {
       tagInStorage shouldBe returnedTag
 
       And("generate correct journal entry")
-      journals should contain theSameElementsInOrderAs List(
-        InsertLog(fixture.generator.randomUUID, request.loggedInUser.uuid, request.uuid, returnedTag, fixture.generator.currentTime)
+      response.success.value.journals.changes should contain theSameElementsInOrderAs List(
+        Change(fixture.generator.randomUUID, None, returnedTag, fixture.generator.currentTime)
       )
     }
   }

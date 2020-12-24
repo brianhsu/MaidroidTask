@@ -3,28 +3,27 @@ package moe.brianhsu.maidroidtask.usecase.tag
 import java.time.LocalDateTime
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Journal, Tag, UpdateLog}
-import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, FailedValidation, NotFound, Required, ValidationErrors}
+import moe.brianhsu.maidroidtask.entity.{Change, Tag}
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, DependencyLoop, Duplicated, NotFound, Required}
+import moe.brianhsu.maidroidtask.usecase.base.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
 
-import scala.util.Try
-
 class EditTagFixture extends BaseFixture {
-  val otherUserTagUUID = UUID.fromString("341342e6-ee4f-465d-ae7d-4f2f9d33448f")
-  val tag1UUID = UUID.fromString("c97675c1-6443-45da-ac91-feb94bf7a185")
-  val tag2UUID = UUID.fromString("1c7760e2-be7a-4ba0-83ce-bdfd8a5446f2")
+  val otherUserTagUUID: UUID = UUID.fromString("341342e6-ee4f-465d-ae7d-4f2f9d33448f")
+  val tag1UUID: UUID = UUID.fromString("c97675c1-6443-45da-ac91-feb94bf7a185")
+  val tag2UUID: UUID = UUID.fromString("1c7760e2-be7a-4ba0-83ce-bdfd8a5446f2")
   val otherUserTagName = "OtherUserTag"
   val existTagName = "SomeTag"
 
-  val fixtureCreateTime = LocalDateTime.now
+  val fixtureCreateTime: LocalDateTime = LocalDateTime.now
 
-  tagRepo.write.insert(Tag(otherUserTagUUID, otherUser.uuid, otherUserTagName, None, isTrashed = false, fixtureCreateTime, fixtureCreateTime))
-  tagRepo.write.insert(Tag(tag1UUID, loggedInUser.uuid, "UserTag", None, isTrashed = false, fixtureCreateTime, fixtureCreateTime))
-  tagRepo.write.insert(Tag(tag2UUID, loggedInUser.uuid, existTagName, None, isTrashed = false, fixtureCreateTime, fixtureCreateTime))
+  val otherUserTag: Tag = tagRepo.write.insert(Tag(otherUserTagUUID, otherUser.uuid, otherUserTagName, None, isTrashed = false, fixtureCreateTime, fixtureCreateTime))
+  val tag1: Tag = tagRepo.write.insert(Tag(tag1UUID, loggedInUser.uuid, "UserTag", None, isTrashed = false, fixtureCreateTime, fixtureCreateTime))
+  val tag2: Tag = tagRepo.write.insert(Tag(tag2UUID, loggedInUser.uuid, existTagName, None, isTrashed = false, fixtureCreateTime, fixtureCreateTime))
 
-  def run(request: EditTag.Request): (Try[Tag], List[Journal]) = {
+  def run(request: EditTag.Request): ResultHolder[Tag] = {
     val useCase = new EditTag(request)
-    (useCase.execute(), useCase.journals)
+    useCase.execute()
   }
 }
 
@@ -39,7 +38,7 @@ class EditTagTest extends BaseFixtureFeature[EditTagFixture] {
       val request = EditTag.Request(fixture.loggedInUser, uuidNotExist, Some("NewName"))
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should NOT pass the validation, and yield NotFound error")
       response should containsFailedValidation("uuid", NotFound)
@@ -50,7 +49,7 @@ class EditTagTest extends BaseFixtureFeature[EditTagFixture] {
       val request = EditTag.Request(fixture.loggedInUser, fixture.otherUserTagUUID, Some("NewName"))
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should NOT pass the validation, and yield AccessDenied error")
       response should containsFailedValidation("uuid", AccessDenied)
@@ -61,7 +60,7 @@ class EditTagTest extends BaseFixtureFeature[EditTagFixture] {
       val request = EditTag.Request(fixture.loggedInUser, fixture.tag1UUID, Some("    \n   \t  "))
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should NOT pass the validation, and yield Required error")
       response should containsFailedValidation("name", Required)
@@ -72,7 +71,7 @@ class EditTagTest extends BaseFixtureFeature[EditTagFixture] {
       val request = EditTag.Request(fixture.loggedInUser, fixture.tag1UUID, Some(fixture.existTagName))
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should NOT pass the validation, and yield Duplicate error")
       response should containsFailedValidation("name", Duplicated)
@@ -85,7 +84,7 @@ class EditTagTest extends BaseFixtureFeature[EditTagFixture] {
       val request = EditTag.Request(fixture.loggedInUser, fixture.tag1UUID, parentTagUUID = Some(Some(nonExistParentUUID)))
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should NOT pass validation and yield NotFound error")
       response should containsFailedValidation("parentTagUUID", NotFound)
@@ -96,10 +95,35 @@ class EditTagTest extends BaseFixtureFeature[EditTagFixture] {
       val request = EditTag.Request(fixture.loggedInUser, fixture.tag1UUID, parentTagUUID = Some(Some(fixture.otherUserTagUUID)))
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should NOT pass validation and yield NotFound error")
       response should containsFailedValidation("parentTagUUID", AccessDenied)
+    }
+
+    Scenario("The tag is already trashed") { fixture =>
+      Given("user request to edit a tag that is already trashed")
+      val trashedTag = fixture.createTag(fixture.loggedInUser, "TrashedTag", isTrashed = true)
+      val request = EditTag.Request(fixture.loggedInUser, trashedTag.uuid)
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass validation and yield AlreadyTrashed error")
+      response should containsFailedValidation("uuid", AlreadyTrashed)
+    }
+
+    Scenario("The parent tag is already trashed") { fixture =>
+      Given("user request to assign new parent tag that is already trashed")
+      val trashedTag = fixture.createTag(fixture.loggedInUser, "TrashedTag", isTrashed = true)
+      val tagToEdit = fixture.createTag(fixture.loggedInUser, "Tag to edit")
+      val request = EditTag.Request(fixture.loggedInUser, tagToEdit.uuid, parentTagUUID = Some(Some(trashedTag.uuid)))
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass validation and yield AlreadyTrashed error")
+      response should containsFailedValidation("parentTagUUID", AlreadyTrashed)
     }
 
     Scenario("Edit a tag, and name has duplication in system with other user") { fixture =>
@@ -107,10 +131,10 @@ class EditTagTest extends BaseFixtureFeature[EditTagFixture] {
       val request = EditTag.Request(fixture.loggedInUser, fixture.tag1UUID, Some(fixture.otherUserTagName))
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should pass the validation")
-      val returnedTag = response.success.value
+      val returnedTag = response.success.value.result
       returnedTag shouldBe a[Tag]
     }
 
@@ -119,12 +143,53 @@ class EditTagTest extends BaseFixtureFeature[EditTagFixture] {
       val request = EditTag.Request(fixture.loggedInUser, fixture.tag1UUID, Some("SomeNewName"))
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should pass the validation")
-      val returnedTag = response.success.value
+      val returnedTag = response.success.value.result
       returnedTag shouldBe a[Tag]
     }
+  }
+
+  Feature("Blocking create a dependency loop when assign parent tag") {
+    Scenario("Tag depends on each other") { fixture =>
+
+      Given("tagB has a parent tag named tagA")
+      val tagA = fixture.createTag(fixture.loggedInUser, "TagA")
+      val tagB = fixture.createTag(fixture.loggedInUser, "TagB", Some(tagA.uuid))
+
+      And("user request to assign tagB as parent of tagA")
+      val request = EditTag.Request(fixture.loggedInUser, tagA.uuid, parentTagUUID = Some(Some(tagB.uuid)))
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass the validation and yield DependencyLoop error")
+      response should containsFailedValidation("parentTagUUID", DependencyLoop)
+    }
+
+    Scenario("Edit tag will create loop") { fixture =>
+      Given("A tag dependency looks like the following")
+      info("    tagA <-- tagB <-- tagC <-- tagD")
+      val tagA = fixture.createTag(fixture.loggedInUser, "TagA")
+      val tagB = fixture.createTag(fixture.loggedInUser, "TagB", Some(tagA.uuid))
+      val tagC = fixture.createTag(fixture.loggedInUser, "TagC", Some(tagB.uuid))
+      val tagD = fixture.createTag(fixture.loggedInUser, "TagD", Some(tagC.uuid))
+
+      And("user request to assign tagD as parent of tagB")
+      info("    tagA <-- tagB <-- tagC <-- tagD")
+      info("                    |                          ^")
+      info("                    +--------------------------+")
+      val request = EditTag.Request(fixture.loggedInUser, tagD.uuid, parentTagUUID = Some(Some(tagB.uuid)))
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass the validation and yield DependencyLoop error")
+      response should containsFailedValidation("parentTagUUID", DependencyLoop)
+
+    }
+
   }
 
   Feature("Edit tag in system") {
@@ -133,10 +198,10 @@ class EditTagTest extends BaseFixtureFeature[EditTagFixture] {
       val request = EditTag.Request(fixture.loggedInUser, fixture.tag1UUID, Some("SomeNewName"))
 
       When("run the use case")
-      val (response, journals) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should return edited tag contains updated information")
-      val returnedTag = response.success.value
+      val returnedTag = response.success.value.result
       inside(returnedTag) { case Tag(uuid, userUUID, name, parentTagUUID, isDeleted, createTime, updateTime) =>
         uuid shouldBe request.uuid
         userUUID shouldBe request.loggedInUser.uuid
@@ -152,11 +217,8 @@ class EditTagTest extends BaseFixtureFeature[EditTagFixture] {
       tagInStorage shouldBe returnedTag
 
       And("generate correct journal entry")
-      journals shouldBe List(
-        UpdateLog(
-          fixture.generator.randomUUID, request.loggedInUser.uuid,
-          request.uuid, returnedTag, fixture.generator.currentTime
-        )
+      response.success.value.journals.changes shouldBe List(
+        Change(fixture.generator.randomUUID, Some(fixture.tag1), returnedTag, fixture.generator.currentTime)
       )
     }
 
@@ -169,10 +231,10 @@ class EditTagTest extends BaseFixtureFeature[EditTagFixture] {
       )
 
       When("run the use case")
-      val (response, journals) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should return edited tag contains updated information")
-      val returnedTag = response.success.value
+      val returnedTag = response.success.value.result
       inside(returnedTag) { case Tag(uuid, userUUID, name, parentTagUUID, isDeleted, createTime, updateTime) =>
         uuid shouldBe request.uuid
         userUUID shouldBe request.loggedInUser.uuid
@@ -188,11 +250,8 @@ class EditTagTest extends BaseFixtureFeature[EditTagFixture] {
       tagInStorage shouldBe returnedTag
 
       And("generate correct journal entry")
-      journals shouldBe List(
-        UpdateLog(
-          fixture.generator.randomUUID, request.loggedInUser.uuid,
-          request.uuid, returnedTag, fixture.generator.currentTime
-        )
+      response.success.value.journals.changes shouldBe List(
+        Change(fixture.generator.randomUUID, Some(fixture.tag1), returnedTag, fixture.generator.currentTime)
       )
     }
   }

@@ -2,51 +2,62 @@ package moe.brianhsu.maidroidtask.usecase.tag
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{Journal, Tag, TrashLog, User}
-import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
-import moe.brianhsu.maidroidtask.gateway.repo.TagRepo
-import moe.brianhsu.maidroidtask.usecase.UseCase
-import moe.brianhsu.maidroidtask.usecase.Validations.{ErrorDescription, HasChildren, ValidationRules}
+import moe.brianhsu.maidroidtask.entity.{Change, Journal, Tag, User}
+import moe.brianhsu.maidroidtask.gateway.repo.TagReadable
+import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
+import moe.brianhsu.maidroidtask.usecase.base.{UseCase, UseCaseRequest, UseCaseRuntime}
+import moe.brianhsu.maidroidtask.usecase.task.RemoveTag
 import moe.brianhsu.maidroidtask.usecase.validator.EntityValidator
 
 object TrashTag {
-  case class Request(loggedInUser: User, uuid: UUID)
+  case class Request(loggedInUser: User, uuid: UUID) extends UseCaseRequest
 }
 
-class TrashTag(request: TrashTag.Request)(implicit tagRepo: TagRepo, generator: DynamicDataGenerator) extends UseCase[Tag] {
-  private lazy val trashedTagHolder = tagRepo.read.findByUUID(request.uuid).map { tag =>
+class TrashTag(request: TrashTag.Request)(implicit runtime: UseCaseRuntime) extends UseCase[Tag] {
+
+  import runtime.executor
+
+  private var cleanupJournals: List[Change] = Nil
+  private lazy val oldTag = runtime.tagRepo.read.findByUUID(request.uuid)
+  private lazy val trashedTagHolder = oldTag.map { tag =>
     tag.copy(
       isTrashed = true,
-      updateTime = generator.currentTime
+      updateTime = runtime.generator.currentTime
     )
   }
+
+  private def cleanupTaskTags(): Unit = {
+    runtime.taskRepo.read.findByTag(request.uuid).foreach { task =>
+      val useCase = new RemoveTag(RemoveTag.Request(request.loggedInUser, task.uuid, request.uuid))
+      val response = useCase.execute()
+      cleanupJournals ++= response.map(_.journals.changes).getOrElse(Nil)
+    }
+  }
+
   override def doAction(): Tag = {
-    trashedTagHolder.foreach { tag => tagRepo.write.update(request.uuid, tag) }
+    cleanupTaskTags()
+    trashedTagHolder.foreach { tag => runtime.tagRepo.write.update(request.uuid, tag) }
     trashedTagHolder.get
   }
 
-  override def journals: List[Journal] = trashedTagHolder.map { tag =>
-    TrashLog(
-      generator.randomUUID,
-      request.loggedInUser.uuid,
-      request.uuid,
-      tag,
-      generator.currentTime
-    )
+  override def journal: Journal = Journal(
+    runtime.generator.randomUUID, request.loggedInUser.uuid,
+    request, journals, runtime.generator.currentTime
+  )
+
+  private def journals: List[Change] = cleanupJournals ++ trashedTagHolder.map { tag =>
+    Change(runtime.generator.randomUUID, oldTag, tag, runtime.generator.currentTime)
   }.toList
 
   override def validations: List[ValidationRules] = {
-    implicit val read = tagRepo.read
 
-    def hasChildren(uuid: UUID): Option[ErrorDescription] = {
-      if (tagRepo.read.hasChildren(uuid)) Some(HasChildren) else None
-    }
+    implicit val tagRead: TagReadable = runtime.tagRepo.read
 
     groupByField(
       createValidator("uuid", request.uuid,
         EntityValidator.exist[Tag],
         EntityValidator.belongToUser[Tag](request.loggedInUser),
-        hasChildren
+        EntityValidator.hasNoUnTrashedChildren[Tag]
       )
     )
   }

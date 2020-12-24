@@ -2,22 +2,21 @@ package moe.brianhsu.maidroidtask.usecase.tag
 
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{InsertLog, Journal, Tag, User}
-import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
-import moe.brianhsu.maidroidtask.gateway.repo.TagRepo
-import moe.brianhsu.maidroidtask.usecase.UseCase
+import moe.brianhsu.maidroidtask.entity.{Change, Journal, Tag, User}
+import moe.brianhsu.maidroidtask.gateway.repo.TagReadable
 import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
+import moe.brianhsu.maidroidtask.usecase.base.{UseCase, UseCaseRequest, UseCaseRuntime}
 import moe.brianhsu.maidroidtask.usecase.validator.{EntityValidator, GenericValidator}
 
 object AddTag {
   case class Request(loggedInUser: User,
                      uuid: UUID,
                      name: String,
-                     parentTagUUID: Option[UUID] = None)
+                     parentTagUUID: Option[UUID] = None) extends UseCaseRequest
 }
 
-class AddTag(request: AddTag.Request)(implicit tagRepo: TagRepo, generator: DynamicDataGenerator) extends UseCase[Tag] {
-  private val currentTime = generator.currentTime
+class AddTag(request: AddTag.Request)(implicit runtime: UseCaseRuntime) extends UseCase[Tag] {
+  private val currentTime = runtime.generator.currentTime
   private val tag = Tag(
     request.uuid, request.loggedInUser.uuid,
     request.name, request.parentTagUUID,
@@ -25,29 +24,34 @@ class AddTag(request: AddTag.Request)(implicit tagRepo: TagRepo, generator: Dyna
     currentTime, currentTime
   )
   override def doAction(): Tag = {
-    tagRepo.write.insert(tag)
+    runtime.tagRepo.write.insert(tag)
     tag
   }
 
-  override def journals: List[Journal] = List(
-    InsertLog(
-      generator.randomUUID,
-      request.loggedInUser.uuid,
-      tag.uuid, tag,
-      generator.currentTime
-    )
+  override def journal: Journal = Journal(
+    runtime.generator.randomUUID, request.loggedInUser.uuid,
+    request, journals, runtime.generator.currentTime
+  )
+
+  private def journals: List[Change] = List(
+    Change(runtime.generator.randomUUID, None, tag, runtime.generator.currentTime)
   )
 
   override def validations: List[ValidationRules] = {
-    implicit val tagReadable = tagRepo.read
+
     import GenericValidator.option
+    implicit val tagRead: TagReadable = runtime.tagRepo.read
 
     groupByField(
       createValidator("uuid", request.uuid, EntityValidator.noCollision[Tag]),
-      createValidator("name", request.name, GenericValidator.notEmpty),
+      createValidator("name", request.name,
+        GenericValidator.notEmpty,
+        EntityValidator.noSameNameForSameUser[Tag](request.loggedInUser)
+      ),
       createValidator(
         "parentTagUUID", request.parentTagUUID,
         option(EntityValidator.exist[Tag]),
+        option(EntityValidator.notTrashed[Tag]),
         option(EntityValidator.belongToUser[Tag](request.loggedInUser))
       )
     )

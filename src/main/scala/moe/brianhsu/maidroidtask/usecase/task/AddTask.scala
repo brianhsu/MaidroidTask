@@ -3,11 +3,10 @@ package moe.brianhsu.maidroidtask.usecase.task
 import java.time.LocalDateTime
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{InsertLog, Journal, Priority, ScheduledAt, Tag, Task, User}
-import moe.brianhsu.maidroidtask.gateway.generator.DynamicDataGenerator
-import moe.brianhsu.maidroidtask.gateway.repo.{TagRepo, TaskRepo, UserBasedReadable}
-import moe.brianhsu.maidroidtask.usecase.UseCase
-import moe.brianhsu.maidroidtask.usecase.Validations.{Duplicated, ErrorDescription, NotFound, Required, ValidationRules}
+import moe.brianhsu.maidroidtask.entity.{Change, Journal, Project, ScheduledAt, Tag, Task, User}
+import moe.brianhsu.maidroidtask.gateway.repo.Readable
+import moe.brianhsu.maidroidtask.usecase.Validations.ValidationRules
+import moe.brianhsu.maidroidtask.usecase.base.{UseCase, UseCaseRequest, UseCaseRuntime}
 import moe.brianhsu.maidroidtask.usecase.task.AddTask.Request
 import moe.brianhsu.maidroidtask.usecase.validator.{EntityValidator, GenericValidator}
 
@@ -19,35 +18,44 @@ object AddTask {
                      project: Option[UUID] = None,
                      tags: List[UUID] = Nil,
                      dependsOn: List[UUID] = Nil,
-                     priority: Option[Priority] = None,
                      waitUntil: Option[LocalDateTime] = None,
                      due: Option[LocalDateTime] = None,
                      scheduledAt: Option[ScheduledAt] = None,
-                     isDone: Boolean = false)
+                     isDone: Boolean = false) extends UseCaseRequest
 }
 
-class AddTask(request: Request)(implicit val taskRepo: TaskRepo, tagRepo: TagRepo, generator: DynamicDataGenerator) extends UseCase[Task] {
+class AddTask(request: Request)(implicit runtime: UseCaseRuntime) extends UseCase[Task] {
   private val task = Task(
     request.uuid, request.loggedInUser.uuid,
     request.description, request.note, request.project, request.tags,
-    request.dependsOn, request.priority, request.waitUntil, request.due,
+    request.dependsOn, request.waitUntil, request.due,
     request.scheduledAt, isDone = request.isDone, isTrashed = false,
-    generator.currentTime, generator.currentTime
+    runtime.generator.currentTime, runtime.generator.currentTime
   )
 
   override def doAction(): Task = {
-    taskRepo.write.insert(task)
+    runtime.taskRepo.write.insert(task)
     task
   }
 
-  override def journals: List[Journal] = List(
-    InsertLog(generator.randomUUID, request.loggedInUser.uuid, request.uuid, task, generator.currentTime)
+  override def journal: Journal = Journal(
+    runtime.generator.randomUUID, request.loggedInUser.uuid,
+    request, journals, runtime.generator.currentTime
+  )
+
+  private def journals: List[Change] = List(
+    Change(
+      runtime.generator.randomUUID, None, task,
+      runtime.generator.currentTime
+    )
   )
 
   override def validations: List[ValidationRules] = {
 
-    implicit val readable: UserBasedReadable[Task] = taskRepo.read
-    implicit val tagReadable: UserBasedReadable[Tag] = tagRepo.read
+    implicit val readable: Readable[Task] = runtime.taskRepo.read
+    implicit val tagReadable: Readable[Tag] = runtime.tagRepo.read
+    implicit val projectReadable: Readable[Project] = runtime.projectRepo.read
+    import GenericValidator.option
 
     groupByField(
       createValidator("uuid", request.uuid, EntityValidator.noCollision[Task]),
@@ -55,8 +63,10 @@ class AddTask(request: Request)(implicit val taskRepo: TaskRepo, tagRepo: TagRep
       createValidator("dependsOn", request.dependsOn, EntityValidator.allExist[Task]),
       createValidator("tags", request.tags,
         EntityValidator.allExist[Tag],
-        EntityValidator.allBelongToUser[Tag](request.loggedInUser)
-      )
+        EntityValidator.allBelongToUser[Tag](request.loggedInUser),
+        EntityValidator.allNotTrashed[Tag]
+      ),
+      createValidator("project", request.project, option(EntityValidator.notTrashed[Project]))
     )
   }
 }

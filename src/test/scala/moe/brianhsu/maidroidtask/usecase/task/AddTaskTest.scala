@@ -3,20 +3,19 @@ package moe.brianhsu.maidroidtask.usecase.task
 import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.util.UUID
 
-import moe.brianhsu.maidroidtask.entity.{InsertLog, Journal, P1, ScheduledAt, Tag, Task}
-import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, Duplicated, FailedValidation, NotFound, Required, ValidationErrors}
+import moe.brianhsu.maidroidtask.entity.{Change, ScheduledAt, Tag, Task}
+import moe.brianhsu.maidroidtask.usecase.Validations.{AccessDenied, AlreadyTrashed, Duplicated, NotFound, Required}
+import moe.brianhsu.maidroidtask.usecase.base.types.ResultHolder
 import moe.brianhsu.maidroidtask.utils.fixture.{BaseFixture, BaseFixtureFeature}
-
-import scala.util.Try
 
 class AddTaskFixture extends BaseFixture {
 
   private val fixtureCreateTime = LocalDateTime.parse("2020-07-30T11:12:13")
 
-  val userTag = tagRepo.write.insert(Tag(UUID.randomUUID, loggedInUser.uuid, "ExistTag", None, isTrashed = false, generator.currentTime, generator.currentTime))
-  val otherUserTag = tagRepo.write.insert(Tag(UUID.randomUUID, otherUser.uuid, "OtherUserTag", None, isTrashed = false, generator.currentTime, generator.currentTime))
+  val userTag: Tag = tagRepo.write.insert(Tag(UUID.randomUUID, loggedInUser.uuid, "ExistTag", None, isTrashed = false, generator.currentTime, generator.currentTime))
+  val otherUserTag: Tag = tagRepo.write.insert(Tag(UUID.randomUUID, otherUser.uuid, "OtherUserTag", None, isTrashed = false, generator.currentTime, generator.currentTime))
 
-  val userTask = taskRepo.write.insert(
+  val userTask: Task = taskRepo.write.insert(
     Task(
       UUID.randomUUID, loggedInUser.uuid, "Description",
       createTime = fixtureCreateTime,
@@ -24,9 +23,9 @@ class AddTaskFixture extends BaseFixture {
     )
   )
 
-  def run(request: AddTask.Request): (Try[Task], List[Journal]) = {
+  def run(request: AddTask.Request): ResultHolder[Task] = {
     val useCase = new AddTask(request)
-    (useCase.execute(), useCase.journals)
+    useCase.execute()
   }
 }
 
@@ -44,7 +43,7 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
       val request = AddTask.Request(fixture.loggedInUser, fixture.userTask.uuid, "Description")
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it shouldn't pass the validation")
       response should containsFailedValidation("uuid",Duplicated)
@@ -55,7 +54,7 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
       val request = AddTask.Request(fixture.loggedInUser, UUID.randomUUID, "")
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it shouldn't pass the validation")
       response should containsFailedValidation("description", Required)
@@ -68,7 +67,7 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
       val request = AddTask.Request(fixture.loggedInUser, UUID.randomUUID, "Task", tags = tagsList)
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it shouldn't pass the  and yield NotFound error")
       response should containsFailedValidation("tags", NotFound)
@@ -80,7 +79,7 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
       val request = AddTask.Request(fixture.loggedInUser, UUID.randomUUID, "Task", tags = tagsList)
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it shouldn't pass the  and yield NotFound error")
       response should containsFailedValidation("tags", AccessDenied)
@@ -91,7 +90,7 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
       val request = AddTask.Request(fixture.loggedInUser, UUID.randomUUID, "    \t   \n  ")
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it shouldn't pass the validation")
       response should containsFailedValidation("description", Required)
@@ -104,10 +103,44 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
       val request = AddTask.Request(fixture.loggedInUser, UUID.randomUUID, "Description", dependsOn = taskDependsOn)
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it shouldn't pass the validation")
       response should containsFailedValidation("dependsOn", NotFound)
+    }
+
+    Scenario("Add task with trashed project") { fixutre =>
+      Given("user request to add task with trashed project")
+      val trashedProject = fixutre.createProject(fixutre.loggedInUser, "TrashedProject", isTrashed = true)
+      val request = AddTask.Request(
+        fixutre.loggedInUser, UUID.randomUUID,
+        "Description",
+        project = Some(trashedProject.uuid)
+      )
+
+      When("run the use case")
+      val response = fixutre.run(request)
+
+      Then("it should NOT pass the validation and yield AlreadyTrashed error")
+      response should containsFailedValidation("project", AlreadyTrashed)
+    }
+
+    Scenario("Add task with trashed tag") { fixture =>
+      Given("user request to add task with trashed tag")
+      val trashedTag = fixture.createTag(fixture.loggedInUser, "TrashedTag", isTrashed = true)
+      val nonTrashedTag = fixture.createTag(fixture.loggedInUser, "SomeTag")
+      val request = AddTask.Request(
+        fixture.loggedInUser,
+        UUID.randomUUID,
+        "Task",
+        tags = List(trashedTag.uuid, nonTrashedTag.uuid)
+      )
+
+      When("run the use case")
+      val response = fixture.run(request)
+
+      Then("it should NOT pass the validation and yield AlreadyTrashed error")
+      response should containsFailedValidation("tags", AlreadyTrashed)
     }
 
     Scenario("Validation passed") { fixture =>
@@ -120,7 +153,6 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
         "Description",
         note = Some("Note"),
         dependsOn = taskDependsOn,
-        priority = Some(P1),
         waitUntil = Some(LocalDateTime.parse("2020-07-30T10:11:12")),
         due = Some(LocalDateTime.parse("2020-08-30T10:00:00")),
         tags = tagsList,
@@ -133,10 +165,10 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
       )
 
       When("run the use case")
-      val (response, _) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("it should pass the validation")
-      response.success.value shouldBe a [Task]
+      response.success.value.result shouldBe a [Task]
     }
   }
 
@@ -152,7 +184,6 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
         note = Some("Note"),
         dependsOn = taskDependsOn,
         tags = tagsList,
-        priority = Some(P1),
         waitUntil = Some(LocalDateTime.parse("2020-07-30T10:11:12")),
         due = Some(LocalDateTime.parse("2020-08-30T10:00:00")),
         scheduledAt = Some(
@@ -165,10 +196,10 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
       )
 
       When("run the use case")
-      val (response, journal) = fixture.run(request)
+      val response = fixture.run(request)
 
       Then("the returned task should be stored in our system")
-      val taskReturned = response.success.value
+      val taskReturned = response.success.value.result
       val taskInStorage = fixture.taskRepo.read.findByUUID(taskUUID).value
       taskInStorage shouldBe taskReturned
 
@@ -180,12 +211,10 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
         project = request.project,
         tags = request.tags,
         dependsOn = request.dependsOn,
-        priority = request.priority,
         waitUntil = request.waitUntil,
         due = request.due,
         scheduledAt = request.scheduledAt,
         isDone = true,
-        isTrashed = false,
         createTime = fixture.generator.currentTime,
         updateTime = fixture.generator.currentTime
       )
@@ -194,13 +223,8 @@ class AddTaskTest extends BaseFixtureFeature[AddTaskFixture] {
       isSameTask(taskInStorage, expectedTask)
 
       And("generate correct journal entry")
-      journal should contain theSameElementsInOrderAs List(
-        InsertLog(
-          fixture.generator.randomUUID,
-          request.loggedInUser.uuid,
-          taskUUID, taskReturned,
-          fixture.generator.currentTime
-        )
+      response.success.value.journals.changes should contain theSameElementsInOrderAs List(
+        Change(fixture.generator.randomUUID, None, taskReturned, fixture.generator.currentTime)
       )
     }
   }
